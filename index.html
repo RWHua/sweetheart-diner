@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff8f0">
+  <title>专属点餐</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cream: '#fff8f0',
+            cocoa: '#5f4035',
+            peach: '#f29b83',
+            rose: '#f8d8cf',
+            mint: '#cfe8dc'
+          },
+          boxShadow: {
+            soft: '0 8px 28px rgba(119, 76, 57, .10)'
+          },
+          animation: {
+            'modal-in': 'modalIn .24s ease-out both'
+          },
+          keyframes: {
+            modalIn: {
+              from: { opacity: '0', transform: 'translateY(18px)' },
+              to:   { opacity: '1', transform: 'translateY(0)' }
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- 仅保留 Tailwind 无法覆盖的跨浏览器滚动条隐藏 -->
+  <style>
+    .scrollbar-hidden::-webkit-scrollbar { display: none; }
+    .scrollbar-hidden { scrollbar-width: none; }
+  </style>
+</head>
+
+<body class="min-w-[320px] bg-cream text-cocoa antialiased">
+
+  <!-- ==================== 顶部标题栏 + 分类Tab ==================== -->
+  <header class="fixed inset-x-0 top-0 z-30 border-b border-rose/60 bg-cream/95 backdrop-blur">
+    <div class="mx-auto max-w-[430px] px-5 pb-3 pt-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs tracking-[.25em] text-peach">♡ FOR TWO ♡</p>
+          <h1 class="mt-1 text-2xl font-bold tracking-wide">专属点餐</h1>
+        </div>
+        <div class="flex h-11 w-11 items-center justify-center rounded-full bg-rose/60 text-xl">🍴</div>
+      </div>
+
+      <nav id="categoryTabs" class="scrollbar-hidden mt-4 flex gap-2 overflow-x-auto pb-1" aria-label="菜品分类"></nav>
+    </div>
+  </header>
+
+  <!-- ==================== 菜品列表 ==================== -->
+  <main class="mx-auto max-w-[430px] px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-36">
+    <div class="mb-3 flex items-end justify-between px-1">
+      <div>
+        <p class="text-sm text-cocoa/55">今天也要好好吃饭</p>
+        <h2 id="categoryTitle" class="mt-1 text-lg font-bold"></h2>
+      </div>
+      <span class="text-2xl">🌷</span>
+    </div>
+
+    <section id="menuList" class="space-y-3" aria-live="polite"></section>
+  </main>
+
+  <!-- ==================== 底部购物车悬浮栏 ==================== -->
+  <div id="cartBar" class="fixed inset-x-0 bottom-0 z-30 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"></div>
+
+  <!-- ==================== 菜品详情弹窗 ==================== -->
+  <div id="dishModal" class="fixed inset-0 z-50 hidden bg-cocoa/30 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="animate-modal-in mx-auto flex h-full max-w-[430px] flex-col overflow-hidden rounded-[2rem] bg-cream shadow-2xl">
+      <div id="dishDetail" class="flex-1 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 购物车全屏弹窗 ==================== -->
+  <div id="cartModal" class="fixed inset-0 z-50 hidden bg-cocoa/30 p-0 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="animate-modal-in mx-auto flex h-full max-w-[430px] flex-col bg-cream">
+      <!-- 标题栏 -->
+      <div class="flex items-center justify-between border-b border-rose/70 px-5 py-4">
+        <div>
+          <p class="text-xs tracking-[.2em] text-peach">YOUR ORDER</p>
+          <h2 class="text-xl font-bold">购物车</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="clearCart" class="active:scale-95 active:opacity-80 flex h-11 w-11 items-center justify-center rounded-full bg-rose/50 text-sm font-bold text-cocoa/60 transition-all duration-150" aria-label="清空购物车">清空</button>
+          <button id="closeCart" class="active:scale-95 active:opacity-80 flex h-11 w-11 items-center justify-center rounded-full bg-rose/50 text-xl transition-all duration-150" aria-label="关闭购物车">×</button>
+        </div>
+      </div>
+
+      <!-- 列表 + 备注 -->
+      <div class="flex-1 overflow-y-auto px-4 py-4">
+        <div id="cartItems" class="space-y-3"></div>
+
+        <div id="emptyCart" class="hidden py-20 text-center text-cocoa/55">
+          <div class="text-5xl">🧺</div>
+          <p class="mt-3">购物车还是空空的呢</p>
+          <button id="backToMenu" class="active:scale-95 active:opacity-80 mt-4 rounded-full bg-peach px-5 py-3 text-sm font-bold text-white transition-all duration-150">去选喜欢的</button>
+        </div>
+
+        <label class="mt-6 block text-sm font-bold">
+          给店家的小纸条
+          <span class="font-normal text-cocoa/40">（选填）</span>
+        </label>
+        <textarea id="orderNote" class="mt-2 h-24 w-full resize-none rounded-2xl border border-rose bg-white/70 p-3 text-sm outline-none transition focus:border-peach" placeholder="例如：少放香菜，或者写一句悄悄话…"></textarea>
+      </div>
+
+      <!-- 底部合计 + 提交 -->
+      <div class="border-t border-rose/70 bg-cream px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div class="mb-3 flex items-center justify-between px-1 text-sm">
+          <span class="text-cocoa/60">合计</span>
+          <strong id="cartTotal" class="text-xl text-peach">¥0</strong>
+        </div>
+        <button id="submitOrder" class="active:scale-95 active:opacity-80 mb-3 flex h-14 w-full items-center justify-center rounded-2xl bg-peach text-base font-bold text-white shadow-soft transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40">提交订单 · 让爱送达</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== Toast 提示 ==================== -->
+  <div id="dishToast" class="fixed left-1/2 top-5 z-[60] hidden -translate-x-1/2 rounded-full bg-cocoa px-5 py-3 text-sm text-white shadow-lg"></div>
+
+  <!-- ==================== 脚本 ==================== -->
+  <script>
+    const menuList = [
+      { id: 'guobaorou',  category: '东北菜', name: '锅包肉',       price: 0, desc: '酸甜酥脆，咬一口就是家乡味。',      img: './images/guobaorou.jpg',  ingredients: '精选里脊、米醋、白糖、胡萝卜丝与葱姜。',               detail: '外酥里嫩的经典东北菜，酸甜口感像我们第一次约会时的心情。',             nutrition: '碳水 42% · 蛋白质 28% · 脂肪 30%' },
+      { id: 'mapotofu',   category: '川菜',   name: '麻婆豆腐',     price: 0, desc: '麻辣鲜香，软嫩豆腐超下饭。',        img: './images/mapotofu.jpg',   ingredients: '嫩豆腐、牛肉末、郫县豆瓣、花椒与小葱。',                   detail: '一勺热乎乎的豆腐，带来刚刚好的麻辣和满满的满足感。',               nutrition: '碳水 18% · 蛋白质 34% · 脂肪 48%' },
+      { id: 'donganji',   category: '湘菜',   name: '东安子鸡',     price: 0, desc: '酸辣开胃，鲜嫩多汁的湘味。',        img: './images/donganji.jpg',   ingredients: '嫩鸡、米醋、泡椒、鲜姜与香葱。',                           detail: '酸辣鲜香的湖南风味，适合和最爱的人一起分享。',                     nutrition: '碳水 12% · 蛋白质 51% · 脂肪 37%' },
+      { id: 'tangcuyu',   category: '鲁菜',   name: '糖醋鲤鱼',     price: 0, desc: '外焦里嫩，甜蜜得像一句告白。',      img: './images/tangcuyu.jpg',   ingredients: '鲜活鲤鱼、陈醋、冰糖、番茄与松子。',                         detail: '造型漂亮、滋味甜蜜，愿我们的日子年年有余。',                       nutrition: '碳水 35% · 蛋白质 39% · 脂肪 26%' },
+      { id: 'peachtea',   category: '饮品',   name: '蜜桃乌龙',     price: 0, desc: '清甜茶香，给今天加一点粉色。',      img: './images/peachtea.jpg',   ingredients: '水蜜桃、乌龙茶、蜂蜜与薄荷。',                               detail: '清爽不腻的蜜桃香气，适合饭后一起碰杯。',                           nutrition: '碳水 88% · 蛋白质 2% · 脂肪 10%' },
+      { id: 'tangyuan',   category: '甜品',   name: '桂花酒酿圆子', price: 0, desc: '软糯香甜，饭后的一点小浪漫。',      img: './images/tangyuan.jpg',   ingredients: '糯米圆子、酒酿、桂花与红糖。',                               detail: '一碗热乎乎的小圆子，愿我们团团圆圆、甜甜蜜蜜。',                   nutrition: '碳水 76% · 蛋白质 8% · 脂肪 16%' },
+      { id: 'danchaofan', category: '主食',   name: '扬州炒饭',     price: 0, desc: '粒粒分明，简单却永远吃不腻。',      img: './images/danchaofan.jpg', ingredients: '隔夜米饭、鸡蛋、虾仁、玉米与青豆。',                       detail: '一份认真炒好的主食，把平凡的日子也变得闪闪发光。',                 nutrition: '碳水 58% · 蛋白质 22% · 脂肪 20%' },
+      { id: 'xiaolongbao',category: '主食',   name: '鲜肉小笼包',   price: 0, desc: '皮薄汁多，小心烫，幸福也会烫。',    img: './images/xiaolongbao.jpg',ingredients: '面粉、鲜猪肉、皮冻、葱姜水。',                             detail: '轻轻提起，先开窗再喝汤，是早餐桌上的温柔仪式。',                   nutrition: '碳水 45% · 蛋白质 25% · 脂肪 30%' }
+    ];
+
+    const categories = ['东北菜','川菜','湘菜','鲁菜','饮品','甜品','主食'];
+    let activeCategory = categories[0];
+    let cart = JSON.parse(localStorage.getItem('sweetheart-cart') || '{}');
+
+    const $ = s => document.querySelector(s);
+
+    const money = v => '¥' + v.toFixed(0);
+
+    const getDish = id => menuList.find(d => d.id === id);
+
+    const saveCart = () => localStorage.setItem('sweetheart-cart', JSON.stringify(cart));
+
+    const cartEntries = () =>
+      Object.entries(cart)
+        .filter(([,q]) => q > 0)
+        .map(([id, q]) => ({ dish: getDish(id), quantity: q }))
+        .filter(({ dish }) => dish);
+
+    const cartCount = () => cartEntries().reduce((s, e) => s + e.quantity, 0);
+    const cartTotal = () => cartEntries().reduce((s, e) => s + e.dish.price * e.quantity, 0);
+
+    /* ---------- 数量变更 ---------- */
+    function changeQuantity(id, delta) {
+      cart[id] = Math.max(0, (cart[id] || 0) + delta);
+      if (!cart[id]) delete cart[id];
+      saveCart();
+      renderMenu();
+      renderCartBar();
+      renderCartModal();
+    }
+
+    /* ---------- 分类Tab ---------- */
+    function renderTabs() {
+      $('#categoryTabs').innerHTML = categories.map(c => {
+        const a = c === activeCategory;
+        return `<button class="active:scale-95 active:opacity-80 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 ${
+          a ? 'bg-cocoa text-white shadow-soft' : 'bg-white/70 text-cocoa/60'
+        }" data-category="${c}">${c}</button>`;
+      }).join('');
+
+      document.querySelectorAll('[data-category]').forEach(b =>
+        b.addEventListener('click', () => { activeCategory = b.dataset.category; renderTabs(); renderMenu(); })
+      );
+    }
+
+    /* ---------- 图片（含 fallback） ---------- */
+    function dishImage(dish) {
+      return `<img src="${dish.img}" alt="${dish.name}" class="h-full w-full object-cover"
+        onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23f8d8cf%22/%3E%3Ctext x=%22100%22 y=%22115%22 text-anchor=%22middle%22 font-size=%2256%22%3E🍲%3C/text%3E%3C/svg%3E'">`;
+    }
+
+    /* ---------- 加减按钮 ---------- */
+    function quantityControl(dish) {
+      const q = cart[dish.id] || 0;
+      return `<div class="flex items-center gap-2">
+        <button class="active:scale-95 active:opacity-80 flex h-9 w-9 items-center justify-center rounded-full bg-rose text-lg font-bold text-cocoa/70 transition-all duration-150 ${q ? '' : 'invisible'}"
+          data-minus="${dish.id}" aria-label="减少${dish.name}">−</button>
+        <span class="min-w-[1rem] text-center text-sm font-bold ${q ? '' : 'hidden'}">${q}</span>
+        <button class="active:scale-95 active:opacity-80 flex h-9 w-9 items-center justify-center rounded-full bg-peach text-xl font-medium text-white transition-all duration-150"
+          data-plus="${dish.id}" aria-label="增加${dish.name}">+</button>
+      </div>`;
+    }
+
+    /* ---------- 菜品列表 ---------- */
+    function renderMenu() {
+      const dishes = menuList.filter(d => d.category === activeCategory);
+      $('#categoryTitle').textContent = activeCategory;
+
+      $('#menuList').innerHTML = dishes.map(dish => `
+        <article class="flex gap-3 rounded-3xl bg-white/75 p-3 shadow-soft">
+          <button class="active:scale-95 active:opacity-80 h-28 w-28 shrink-0 overflow-hidden rounded-2xl bg-rose transition-all duration-150" data-detail="${dish.id}">
+            ${dishImage(dish)}
+          </button>
+          <div class="flex min-w-0 flex-1 flex-col justify-between py-1">
+            <button class="text-left" data-detail="${dish.id}">
+              <h3 class="truncate text-base font-bold">${dish.name}</h3>
+              <p class="mt-1 line-clamp-2 text-xs leading-5 text-cocoa/55">${dish.desc}</p>
+            </button>
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-peach">${money(dish.price)}</span>
+              ${quantityControl(dish)}
+            </div>
+          </div>
+        </article>`).join('');
+
+      document.querySelectorAll('[data-plus]').forEach(b => b.addEventListener('click', () => changeQuantity(b.dataset.plus, 1)));
+      document.querySelectorAll('[data-minus]').forEach(b => b.addEventListener('click', () => changeQuantity(b.dataset.minus, -1)));
+      document.querySelectorAll('[data-detail]').forEach(b => b.addEventListener('click', () => openDish(b.dataset.detail)));
+    }
+
+    /* ---------- 购物车悬浮栏 ---------- */
+    function renderCartBar() {
+      $('#cartBar').innerHTML = `
+        <button id="openCart" class="active:scale-95 active:opacity-80 mx-auto flex h-14 max-w-[398px] items-center justify-between rounded-2xl bg-cocoa px-4 text-white shadow-2xl transition-all duration-150">
+          <span class="flex items-center gap-3">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-peach text-sm font-bold">${cartCount()}</span>
+            <span class="text-sm">已选 · 合计 <strong class="text-peach">${money(cartTotal())}</strong></span>
+          </span>
+          <span class="rounded-xl bg-white/15 px-3 py-2 text-sm font-bold">去结算 →</span>
+        </button>`;
+
+      $('#openCart').addEventListener('click', () => { renderCartModal(); $('#cartModal').classList.remove('hidden'); });
+    }
+
+    /* ---------- 购物车弹窗 ---------- */
+    function renderCartModal() {
+      const entries = cartEntries();
+      $('#emptyCart').classList.toggle('hidden', entries.length > 0);
+
+      $('#cartItems').innerHTML = entries.map(({ dish, quantity }) => `
+        <div class="flex items-center gap-3 rounded-2xl bg-white/75 p-3">
+          <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-rose">${dishImage(dish)}</div>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate font-bold">${dish.name}</h3>
+            <p class="text-sm text-peach">${money(dish.price)}</p>
+          </div>
+          ${quantityControl(dish)}
+        </div>`).join('');
+
+      $('#cartTotal').textContent = money(cartTotal());
+      $('#submitOrder').disabled = !entries.length;
+
+      document.querySelectorAll('#cartItems [data-plus]').forEach(b =>
+        b.addEventListener('click', () => changeQuantity(b.dataset.plus, 1)));
+      document.querySelectorAll('#cartItems [data-minus]').forEach(b =>
+        b.addEventListener('click', () => changeQuantity(b.dataset.minus, -1)));
+    }
+
+    /* ---------- 菜品详情弹窗 ---------- */
+    function openDish(id) {
+      const dish = getDish(id);
+      $('#dishDetail').innerHTML = `
+        <div class="relative">
+          <div class="h-64 bg-rose">${dishImage(dish)}</div>
+          <button id="closeDish" class="active:scale-95 active:opacity-80 absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-xl transition-all duration-150">×</button>
+        </div>
+        <div class="p-5">
+          <div class="flex items-start justify-between">
+            <div>
+              <p class="text-xs tracking-widest text-peach">${dish.category}</p>
+              <h2 class="mt-1 text-2xl font-bold">${dish.name}</h2>
+            </div>
+            <span class="rounded-full bg-mint px-3 py-2 text-sm font-bold text-cocoa/70">${money(dish.price)}</span>
+          </div>
+          <p class="mt-5 leading-7 text-cocoa/70">${dish.detail}</p>
+          <div class="mt-5 rounded-2xl bg-white/70 p-4">
+            <h3 class="font-bold">食材</h3>
+            <p class="mt-2 text-sm leading-6 text-cocoa/60">${dish.ingredients}</p>
+          </div>
+          <div class="mt-3 rounded-2xl bg-rose/50 p-4">
+            <h3 class="font-bold">碳蛋脂比例</h3>
+            <p class="mt-2 text-sm text-cocoa/60">${dish.nutrition}</p>
+          </div>
+          <button id="detailAdd" class="active:scale-95 active:opacity-80 mt-6 h-14 w-full rounded-2xl bg-peach text-base font-bold text-white transition-all duration-150">
+            加入菜单 · ${cart[dish.id] || 0} 份
+          </button>
+        </div>`;
+
+      $('#dishModal').classList.remove('hidden');
+      $('#closeDish').addEventListener('click', closeDish);
+      $('#detailAdd').addEventListener('click', () => {
+        changeQuantity(dish.id, 1);
+        $('#detailAdd').textContent = '已加入 · ' + cart[dish.id] + ' 份';
+      });
+    }
+
+    function closeDish() { $('#dishModal').classList.add('hidden'); }
+
+    /* ---------- Toast ---------- */
+    function showToast(msg) {
+      const t = $('#dishToast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => t.classList.add('hidden'), 2600);
+    }
+
+    /* ---------- 生成订单文本（失败降级用） ---------- */
+    function orderText() {
+      const note = $('#orderNote').value.trim();
+      return ['【专属点餐】',
+        ...cartEntries().map(({ dish, q }) => dish.name + ' × ' + q),
+        '合计：' + money(cartTotal()),
+        note ? '备注：' + note : ''
+      ].filter(Boolean).join('\n');
+    }
+
+    /* ---------- 生成可读订单号 ---------- */
+    function genOrderId() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+      return 'OD-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) +
+             '-' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) +
+             '-' + rand;
+    }
+
+    /* ---------- 提交订单 ---------- */
+    async function submitOrder() {
+      const entries = cartEntries();
+      if (!entries.length) return;
+
+      const btn = $('#submitOrder');
+      btn.disabled = true;
+      btn.textContent = '正在送出爱心…';
+
+      const orderId = genOrderId();
+      const payload = {
+        orderId,
+        items: entries.map(({ dish, quantity }) => ({ id: dish.id, name: dish.name, price: dish.price, quantity })),
+        total: cartTotal(),
+        note: $('#orderNote').value.trim(),
+        clientTime: new Date().toISOString()
+      };
+
+      try {
+        const res = await fetch('/api/submit-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || data.code !== 0) throw new Error(data.msg || '提交失败');
+
+        cart = {}; saveCart();
+        $('#orderNote').value = '';
+        $('#cartModal').classList.add('hidden');
+        renderMenu(); renderCartBar();
+        showToast('订单提交成功，等你开饭啦 ♡');
+      } catch (err) {
+        try {
+          await navigator.clipboard.writeText(orderText());
+          showToast('网络不太稳定，订单已复制，请手动发送');
+        } catch {
+          showToast('提交失败，请截图或手动记录订单');
+        }
+      } finally {
+        btn.disabled = !cartEntries().length;
+        btn.textContent = '提交订单 · 让爱送达';
+      }
+    }
+
+    /* ---------- 清空购物车 ---------- */
+    function clearCartAll() {
+      if (!cartEntries().length) return;
+      cart = {};
+      saveCart();
+      renderMenu();
+      renderCartBar();
+      renderCartModal();
+      showToast('购物车已清空');
+    }
+
+    /* ---------- 事件绑定 ---------- */
+    $('#closeCart').addEventListener('click', () => $('#cartModal').classList.add('hidden'));
+    $('#backToMenu').addEventListener('click', () => $('#cartModal').classList.add('hidden'));
+    $('#clearCart').addEventListener('click', clearCartAll);
+    $('#submitOrder').addEventListener('click', submitOrder);
+    $('#dishModal').addEventListener('click', e => { if (e.target === $('#dishModal')) closeDish(); });
+
+    /* ---------- 初始渲染 ---------- */
+    renderTabs();
+    renderMenu();
+    renderCartBar();
+    renderCartModal();
+  </script>
+</body>
+</html>
