@@ -68,14 +68,13 @@ async function getTenantToken() {
 }
 
 /**
- * 通过飞书 API 发送消息（失败不阻塞订单）
+ * 通过飞书 API 发送消息，返回结果用于调试
  */
 async function sendFeishuMessage(content) {
   const appId = process.env.FEISHU_APP_ID;
   const chatId = process.env.FEISHU_CHAT_ID;
   if (!appId || !chatId) {
-    console.log('飞书配置缺失，跳过通知');
-    return;
+    return { ok: false, error: `配置缺失: APP_ID=${!!appId} CHAT_ID=${!!chatId}` };
   }
   try {
     const token = await getTenantToken();
@@ -96,12 +95,11 @@ async function sendFeishuMessage(content) {
     );
     const data = await res.json();
     if (data.code !== 0) {
-      console.error('飞书通知失败:', data.msg);
-    } else {
-      console.log('飞书通知发送成功');
+      return { ok: false, error: `飞书API错误 code=${data.code} msg=${data.msg}` };
     }
+    return { ok: true };
   } catch (err) {
-    console.error('飞书通知异常:', err.message);
+    return { ok: false, error: err.message };
   }
 }
 
@@ -136,10 +134,14 @@ module.exports = async function handler(req, res) {
       serverTime: new Date().toISOString()
     };
 
-    // 飞书通知不阻塞订单提交
-    sendFeishuMessage(formatOrder(orderRecord));
+    // 飞书通知（不阻塞，但返回结果）
+    const feishuResult = await sendFeishuMessage(formatOrder(orderRecord));
 
-    return res.status(200).json({ code: 0, msg: '提交成功' });
+    return res.status(200).json({
+      code: 0,
+      msg: '提交成功',
+      feishu: feishuResult
+    });
   } catch (error) {
     console.error('submit-order error:', error);
     return res.status(500).json({ code: -1, msg: error.message || '服务器处理失败' });

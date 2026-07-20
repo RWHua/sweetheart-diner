@@ -370,7 +370,12 @@
         $('#orderNote').value = '';
         $('#cartModal').classList.add('hidden');
         renderMenu(); renderCartBar();
-        showToast('订单提交成功，等你开饭啦 ♡');
+
+        const feishu = data.feishu;
+        const feishuMsg = feishu
+          ? (feishu.ok ? '✅ 飞书通知已发送' : '⚠️ 飞书: ' + feishu.error)
+          : '';
+        showToast('订单提交成功，等你开饭啦 ♡' + (feishuMsg ? '\n' + feishuMsg : ''));
       } catch (err) {
         try {
           await navigator.clipboard.writeText(orderText());
