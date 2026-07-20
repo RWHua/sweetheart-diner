@@ -122,6 +122,11 @@
     <div id="randomInner" class="animate-modal-in w-full max-w-[380px] bg-card border border-white/10 rounded-[2rem] overflow-hidden"></div>
   </div>
 
+  <!-- ====== 选项弹窗（火鸡面加料等） ====== -->
+  <div id="optionModal" class="fixed inset-0 z-50 hidden bg-ink/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" style="display:none" role="dialog" aria-modal="true">
+    <div id="optionInner" class="animate-modal-in w-full max-w-[340px] bg-card border border-white/10 rounded-[2rem] overflow-hidden p-6"></div>
+  </div>
+
   <!-- ====== 菜品详情弹窗 ====== -->
   <div id="dishModal" class="fixed inset-0 z-50 hidden bg-ink/80 backdrop-blur-sm p-0" role="dialog" aria-modal="true">
     <div class="animate-modal-in mx-auto max-w-[430px] h-full bg-panel overflow-y-auto"></div>
@@ -198,16 +203,21 @@
       { id:'tangculiji', category:'鲁菜',   name:'糖醋里脊',     price:0, desc:'外酥里嫩，酸甜汁裹着金黄的幸福感。',img:'./images/tangculiji.jpg', ingredients:'猪里脊、鸡蛋、番茄酱、白醋与白糖。',                       detail:'色泽金黄、酸甜可口，一口下去酥脆和嫩滑同时拥有。',                  nutrition:'碳水 38% · 蛋白质 35% · 脂肪 27%', taste:4.8, selectedCount:0, steps:['里脊肉切条，加料酒盐蛋清腌制15分钟。','肉条裹上淀粉，七成油温炸至金黄。','另起锅，番茄酱白醋白糖调成糖醋汁。','下肉条快速翻匀，撒白芝麻出锅。'], tips:'复炸 30 秒更酥脆，糖醋汁提前调好不手忙脚乱。' },
       { id:'basidigua',  category:'甜品',   name:'拔丝地瓜',     price:0, desc:'金黄地瓜裹着晶亮的糖丝，甜蜜拉丝。',img:'./images/basidigua.jpg',  ingredients:'红薯、白糖、清水与少许油。',                                 detail:'刚出锅裹着冰水咬一口，咔嚓脆壳里是软糯甜心。',                    nutrition:'碳水 72% · 蛋白质 3% · 脂肪 25%', taste:4.9, selectedCount:0, steps:['红薯去皮切滚刀块，油炸至金黄熟透捞出。','锅中白糖加少许清水小火熬至琥珀色。','迅速倒入炸好的红薯翻拌裹糖。','装盘配一碗冰水，蘸一下拉丝不烫嘴。'], tips:'熬糖时火一定要小，变成琥珀色立刻离火。' },
       { id:'pijiuchichi',category:'东北菜', name:'啤酒鸡翅',     price:0, desc:'啤酒焖出的鸡翅，骨酥肉烂满屋香。',  img:'./images/pijiuchichi.jpg', ingredients:'鸡翅中、啤酒、生抽、冰糖与姜片。',                         detail:'一锅慢慢焖出来的鸡翅，连骨头都吸饱了啤酒的麦香。',                nutrition:'碳水 15% · 蛋白质 42% · 脂肪 43%', taste:4.7, selectedCount:0, steps:['鸡翅洗净划刀，冷水下锅焯去血沫。','热油煎鸡翅至两面金黄，加姜片爆香。','倒入啤酒没过鸡翅，加生抽冰糖大火烧开。','转小火焖 20 分钟，收汁撒葱花出锅。'], tips:'啤酒选普通黄啤即可，焖的时间越长越入味。' },
-      { id:'gongjinbaodan',category:'东北菜',name:'公瑾爆蛋',   price:0, desc:'整蛋下锅油煎，酱汁一淋满屋香。',    img:'./images/gongjinbaodan.jpg', ingredients:'鸡蛋（不打散）、生抽、老抽、蚝油、白糖、番茄酱、蒜片。',     detail:'蛋不用打散直接下锅，蛋黄还是流心的，裹着咸甜酱汁拌饭一绝。',       nutrition:'碳水 8% · 蛋白质 32% · 脂肪 60%', taste:4.8, selectedCount:0, steps:['蒜切片，生抽老抽蚝油白糖番茄酱加少许水搅成酱汁。','热锅倒油，鸡蛋整颗打入，中小火煎至蛋白焦边蛋黄半熟。','将蒜片撒在蛋周围爆香，倒入酱汁。「滋啦」一声，转大火收汁10秒。','连蛋带汁整盘滑入白瓷盘，趁热吃。'], tips:'蛋黄要保持流心才好吃，煎蛋时火别太大。' }
+      { id:'gongjinbaodan',category:'东北菜',name:'公瑾爆蛋',   price:0, desc:'整蛋下锅油煎，酱汁一淋满屋香。',    img:'./images/gongjinbaodan.jpg', ingredients:'鸡蛋（不打散）、生抽、老抽、蚝油、白糖、番茄酱、蒜片。',     detail:'蛋不用打散直接下锅，蛋黄还是流心的，裹着咸甜酱汁拌饭一绝。',       nutrition:'碳水 8% · 蛋白质 32% · 脂肪 60%', taste:4.8, selectedCount:0, steps:['蒜切片，生抽老抽蚝油白糖番茄酱加少许水搅成酱汁。','热锅倒油，鸡蛋整颗打入，中小火煎至蛋白焦边蛋黄半熟。','将蒜片撒在蛋周围爆香，倒入酱汁。「滋啦」一声，转大火收汁10秒。','连蛋带汁整盘滑入白瓷盘，趁热吃。'], tips:'蛋黄要保持流心才好吃，煎蛋时火别太大。' },
+      { id:'huojimian',   category:'主食',  name:'火鸡面',       price:0, desc:'辣到灵魂出窍，芝士一融又被治愈。',  img:'./images/huojimian.jpg',   ingredients:'火鸡面饼、辣酱包、芝士片、海苔碎。',                       detail:'一口辣到冒汗，一口芝士拉丝，痛并快乐着就是爱情的味道。',          nutrition:'碳水 65% · 蛋白质 15% · 脂肪 20%', taste:4.5, selectedCount:0, options:['加鸡柳大人','不加鸡柳大人'], steps:['水烧开下面饼煮5分钟，捞出留少许面汤。','倒入辣酱包拌匀，铺上一片芝士。','小火焖到芝士融化，撒海苔碎。'], tips:'芝士要最后放，用余热闷化才拉丝。' }
     ];
 
     const categories = ['东北菜','川菜','湘菜','鲁菜','饮品','甜品','主食'];
     let activeCategory = categories[0];
     let cart = JSON.parse(localStorage.getItem('sweetheart-cart') || '{}');
+    let cartOptions = JSON.parse(localStorage.getItem('sweetheart-cart-options') || '{}');
 
     const money = v => '¥' + v.toFixed(0);
     const getDish = id => menuList.find(d => d.id === id);
-    const saveCart = () => localStorage.setItem('sweetheart-cart', JSON.stringify(cart));
+    const saveCart = () => {
+      localStorage.setItem('sweetheart-cart', JSON.stringify(cart));
+      localStorage.setItem('sweetheart-cart-options', JSON.stringify(cartOptions));
+    };
     const cartEntries = () => Object.entries(cart).filter(([,q])=>q>0).map(([id,q])=>({dish:getDish(id),quantity:q})).filter(({dish})=>dish);
     const cartCount = () => cartEntries().reduce((s,e)=>s+e.quantity,0);
     const cartTotal = () => cartEntries().reduce((s,e)=>s+e.dish.price*e.quantity,0);
@@ -285,8 +295,13 @@
       document.querySelectorAll('[data-minus]').forEach(b => b.addEventListener('click', ()=>changeQuantity(b.dataset.minus,-1)));
       document.querySelectorAll('[data-detail]').forEach(b => b.addEventListener('click', ()=>openDish(b.dataset.detail)));
       document.querySelectorAll('[data-want]').forEach(b => b.addEventListener('click', ()=>{
-        changeQuantity(b.dataset.want, 1);
-        showToast('已加入 · ' + (getDish(b.dataset.want)?.name||''));
+        const dish = getDish(b.dataset.want);
+        if (dish && dish.options) {
+          showOptionPicker(dish);
+        } else {
+          changeQuantity(b.dataset.want, 1);
+          showToast('已加入 · ' + (dish?.name||''));
+        }
       }));
     }
 
@@ -354,6 +369,29 @@
       $('#randomModal').style.display = 'flex';
     }
 
+    /* ---- 选项弹窗 ---- */
+    function showOptionPicker(dish) {
+      const opts = dish.options;
+      $('#optionInner').innerHTML = `
+        <div class="text-center">
+          <p class="text-[10px] pixel-text text-mute uppercase mb-2">Option</p>
+          <p class="text-xl font-bold text-tx mb-1">${dish.name}</p>
+          <p class="text-xs text-mute mb-5">选一个搭配</p>
+          ${opts.map(o => `<button class="w-full h-12 rounded-2xl bg-white/5 border border-white/10 text-tx text-sm font-bold mb-2 active:scale-95 hover:border-prime/40 transition-all duration-150" data-opt="${o}" data-dish="${dish.id}">${o}</button>`).join('')}
+          <button class="w-full h-10 text-xs text-mute mt-2 active:scale-95" id="cancelOption">取消</button>
+        </div>`;
+      $('#optionModal').style.display = 'flex';
+      document.querySelectorAll('#optionInner [data-opt]').forEach(b =>
+        b.addEventListener('click', () => {
+          cartOptions[dish.id] = b.dataset.opt;
+          changeQuantity(dish.id, 1);
+          $('#optionModal').style.display = 'none';
+          showToast('已加入 · ' + dish.name + '（' + b.dataset.opt + '）');
+        })
+      );
+      $('#cancelOption').addEventListener('click', () => $('#optionModal').style.display = 'none');
+    }
+
     /* ---- 购物车弹窗 ---- */
     function renderCartModal() {
       const entries = cartEntries();
@@ -362,7 +400,7 @@
         <div class="flex items-center gap-3 rounded-xl bg-card border border-white/5 p-3">
           <div class="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-white/5">${dishImage(dish)}</div>
           <div class="min-w-0 flex-1">
-            <h3 class="truncate font-bold text-tx text-sm">${dish.name}</h3>
+            <h3 class="truncate font-bold text-tx text-sm">${dish.name}${cartOptions[dish.id] ? ' <span class="text-gold text-xs">'+cartOptions[dish.id]+'</span>' : ''}</h3>
             <p class="text-xs text-prime">${money(dish.price)}</p>
           </div>
           <div class="flex items-center gap-1">
