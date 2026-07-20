@@ -1,6 +1,7 @@
 const API = 'https://api.ofox.io/v1/images/generations';
 const KEY = 'sk-of-odRETTXAQExQWZoBxZGOmzyCbEVNuqDVSzstTlATQKdWvdqgRqwZlVXhddwoECiI';
-const DIR = '/d/VibeCoding/sweetheart-diner/images';
+const fs = require('fs');
+const DIR = 'D:/VibeCoding/sweetheart-diner/images';
 
 const dishes = [
   { name: 'guobaorou',  prompt: 'Guo Bao Rou Chinese Northeastern dish, crispy golden pork slices with sweet and sour glaze, carrot and ginger shreds, on a white oval plate, top-down food photography, dark moody background, steam rising, professional food magazine quality' },
@@ -24,7 +25,7 @@ async function gen(dish) {
   const imgRes = await fetch(data.data[0].url);
   const buf = await imgRes.arrayBuffer();
   const path = `${DIR}/${dish.name}.jpg`;
-  require('fs').writeFileSync(path, Buffer.from(buf));
+  fs.writeFileSync(path, Buffer.from(buf));
   console.log(`OK ${dish.name} (${(buf.byteLength/1024).toFixed(0)}KB)`);
 }
 
