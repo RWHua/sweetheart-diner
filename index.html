@@ -59,25 +59,111 @@
 <body class="min-w-[320px] bg-ink text-tx antialiased overflow-x-hidden">
 
   <!-- ====== 首页 ====== -->
-  <div id="homePage" class="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
-    <!-- 背景渐变 -->
-    <div class="absolute inset-0 bg-gradient-to-b from-[#0d1117] via-[#0a1628] to-[#0a0a0a]"></div>
-    <div class="absolute top-0 right-0 w-64 h-64 rounded-full bg-prime/5 blur-3xl"></div>
-    <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-gold/5 blur-3xl"></div>
+  <div id="homePage" class="min-h-screen flex flex-col items-center relative overflow-hidden">
+    <!-- 背景风景 -->
+    <div class="absolute inset-0" style="background:linear-gradient(180deg, #1a2a3a 0%, #1a2a35 30%, #162028 55%, #0d1520 75%, #0a0a0a 100%)"></div>
+    <div class="absolute w-32 h-16 rounded-full bg-[#e8d5a3]/40 blur-md" style="top:18%;right:15%"></div>
+    <div class="absolute w-20 h-20 rounded-full bg-[#f5e6c8]/20 blur-md" style="top:16%;right:17%"></div>
+    <!-- 山脉 -->
+    <div class="absolute bottom-0 left-0 right-0" style="height:40%;background:linear-gradient(180deg,transparent 0%,#0d1520 30%,#0a0f18 60%,#0a0a0a 100%)"></div>
+    <div class="absolute w-full h-32" style="bottom:30%;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 800 200%22%3E%3Cpath d=%22M0 150 Q100 40 200 100 Q300 20 400 90 Q500 30 600 80 Q700 20 800 70 L800 200 L0 200Z%22 fill=%22%23111520%22/%3E%3C/svg%3E') repeat-x;background-size:600px 120px;opacity:0.7"></div>
+    <div class="absolute w-full h-24" style="bottom:22%;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 800 200%22%3E%3Cpath d=%22M0 120 Q150 50 300 110 Q450 60 600 100 Q700 70 800 90 L800 200 L0 200Z%22 fill=%22%230d1117%22/%3E%3C/svg%3E') repeat-x;background-size:500px 100px;opacity:0.8"></div>
+
+    <!-- 暗角 -->
+    <div class="absolute inset-0" style="background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.7) 100%)"></div>
+
     <!-- 内容 -->
-    <div class="relative z-10 text-center max-w-[360px] w-full">
-      <div class="text-6xl mb-6">🍽️</div>
-      <p class="text-[10px] pixel-text text-prime tracking-[.3em] mb-4">SWEETHEART DINER</p>
-      <h1 class="text-4xl font-bold text-tx mb-3">专属点餐</h1>
-      <p class="text-sm text-mute mb-10">属于我们两个人的小餐桌</p>
-      <button id="enterBtn" class="w-full h-16 rounded-2xl bg-card border border-white/10 hover:border-prime/30 flex items-center px-5 active:scale-[.98] transition-all duration-200 group">
-        <div class="w-10 h-10 rounded-xl bg-prime/15 flex items-center justify-center text-lg mr-4 group-hover:bg-prime/25 transition-all">🍜</div>
-        <div class="text-left flex-1">
-          <p class="text-[10px] pixel-text text-mute mb-0.5">EAT</p>
-          <p class="text-base font-bold text-tx">今天吃什么</p>
+    <div class="relative z-10 w-full max-w-[430px] px-6 pt-12 pb-8 flex flex-col min-h-screen">
+      <!-- 头像+标题 -->
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-full bg-[#3a2a2a] flex items-center justify-center text-xs text-white/60 overflow-hidden">🍽️</div>
+        <span class="pixel-text text-white text-3xl tracking-wider" style="text-shadow:2px 2px 0 rgba(0,0,0,.5)">Taste</span>
+        <div class="ml-auto flex gap-2">
+          <div class="w-2 h-2 rounded-full bg-white/40"></div>
+          <div class="w-2 h-2 rounded-full bg-white/40"></div>
+          <div class="w-2 h-2 rounded-full bg-white/40"></div>
         </div>
-        <span class="text-mute group-hover:text-prime transition-all text-xl">→</span>
-      </button>
+      </div>
+
+      <!-- 问候 -->
+      <div class="self-end mb-4">
+        <span class="text-sm bg-[#c9a96e]/20 text-[#c9a96e] px-4 py-2 rounded-full">你好，B1ue</span>
+      </div>
+
+      <!-- 时钟 -->
+      <div class="text-center mb-2">
+        <div id="homeClock" class="pixel-text text-5xl text-white tracking-widest" style="text-shadow:0 0 20px rgba(255,255,255,.3)">--:--</div>
+        <p id="homeDate" class="text-base text-white/80 mt-2 font-bold tracking-wide"></p>
+        <p id="homeLunar" class="text-xs text-white/40 mt-0.5"></p>
+        <p class="text-xs text-[#c9a96e] mt-1">探险日 · <span id="homePeriod">上午</span></p>
+        <p class="text-sm text-white/70 mt-3">今天午饭吃什么？</p>
+      </div>
+
+      <!-- 卡片区 -->
+      <div class="mt-auto space-y-3 pb-4">
+        <div class="flex justify-between px-2 mb-1">
+          <span class="text-[10px] pixel-text text-white/60 tracking-widest">TASTE</span>
+          <span class="text-[10px] pixel-text text-white/60 tracking-widest">4 ROOMS</span>
+        </div>
+
+        <!-- EAT -->
+        <button id="enterBtn" class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#3a5068] p-4 flex items-center active:scale-[.98] transition-all duration-200 hover:border-[#5a7a9a] group">
+          <div class="w-14 h-14 rounded-xl bg-[#1a2a3a] flex items-center justify-center mr-4 shrink-0 border border-[#3a5068]/50">
+            <span class="pixel-text text-2xl text-white/80">？</span>
+          </div>
+          <div class="text-left flex-1">
+            <span class="text-[9px] pixel-text text-[#5a7a9a]">EAT</span>
+            <p class="text-base font-bold text-white">今天吃什么</p>
+            <p class="text-xs text-white/40 mt-0.5">做一碗饭，煮一碗面</p>
+          </div>
+          <span class="text-[#5a7a9a] text-xl">›</span>
+        </button>
+
+        <!-- DRK -->
+        <div class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#5a4030] p-4 flex items-center opacity-60">
+          <div class="w-14 h-14 rounded-xl bg-[#2a1a10] flex items-center justify-center mr-4 shrink-0 border border-[#5a4030]/50">
+            <span class="pixel-text text-2xl text-[#c9a96e]">？</span>
+          </div>
+          <div class="text-left flex-1">
+            <span class="text-[9px] pixel-text text-[#c9a96e]">DRK</span>
+            <p class="text-base font-bold text-white">今天喝什么</p>
+            <p class="text-xs text-white/40 mt-0.5">这里不打烊，随便喝一杯</p>
+          </div>
+          <span class="text-[#c9a96e] text-xl">›</span>
+        </div>
+
+        <!-- FM -->
+        <div class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#3a3a4a] p-4 flex items-center opacity-50">
+          <div class="w-14 h-14 rounded-xl bg-[#1a1a2a] flex items-center justify-center mr-4 shrink-0 border border-[#3a3a4a]/50">
+            <span class="pixel-text text-2xl text-white/50">？</span>
+          </div>
+          <div class="text-left flex-1">
+            <span class="text-[9px] pixel-text text-white/50">FM</span>
+            <p class="text-base font-bold text-white/60">今天听什么</p>
+            <p class="text-xs text-white/30 mt-0.5">必须听点什么</p>
+          </div>
+          <span class="text-white/30 text-xl">›</span>
+        </div>
+
+        <!-- SCR -->
+        <div class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#5a4a30] p-4 flex items-center opacity-40">
+          <div class="w-14 h-14 rounded-xl bg-[#1a150a] flex items-center justify-center mr-4 shrink-0 border border-[#5a4a30]/50">
+            <span class="pixel-text text-2xl text-[#c9a96e]/60">？</span>
+          </div>
+          <div class="text-left flex-1">
+            <span class="text-[9px] pixel-text text-[#c9a96e]/60">SCR</span>
+            <p class="text-base font-bold text-white/50">今天看什么</p>
+            <p class="text-xs text-white/30 mt-0.5">只想躺在沙发</p>
+          </div>
+          <span class="text-[#c9a96e]/40 text-xl">›</span>
+        </div>
+      </div>
+
+      <!-- 底部版权 -->
+      <div class="flex justify-between mt-3 px-2">
+        <span class="text-[9px] pixel-text text-white/30">Copyright © 2026 阿B</span>
+        <span class="text-[9px] pixel-text text-white/30">Contact</span>
+      </div>
     </div>
   </div>
 
@@ -569,6 +655,19 @@
     $('#tabToday').addEventListener('click',()=>{ ordersTab='today'; $('#tabToday').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-prime text-ink'; $('#tabAll').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-white/5 text-mute'; loadOrders(); });
     $('#tabAll').addEventListener('click',()=>{ ordersTab='all'; $('#tabAll').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-prime text-ink'; $('#tabToday').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-white/5 text-mute'; loadOrders(); });
     $('#ordersContent').addEventListener('click',e=>{ const btn=e.target.closest('[data-del]'); if(btn) deleteOrder(btn.dataset.del); });
+
+    // 首页时钟
+    function updateHomeClock() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      $('#homeClock').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      $('#homeDate').textContent = days[now.getDay()] + '  ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+      $('#homePeriod').textContent = now.getHours() < 12 ? '上午' : now.getHours() < 18 ? '下午' : '晚上';
+    }
+    updateHomeClock();
+    setInterval(updateHomeClock, 30000);
 
     // 启动
     // 首页进入按钮
