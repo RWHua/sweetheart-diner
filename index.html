@@ -291,7 +291,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2 mt-3">
-            <button class="flex-1 h-11 rounded-xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150" data-want="${dish.id}">我要吃这个！</button>
+            <button class="flex-1 h-11 rounded-xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150" data-want="${dish.id}">${dish.category==='饮品'?'我要喝这个！':'我要吃这个！'}</button>
             <div class="flex items-center gap-1 shrink-0">
               <button class="w-8 h-8 rounded-full bg-white/5 text-mute text-sm active:scale-95 ${cart[dish.id]?'':'invisible'}" data-minus="${dish.id}">−</button>
               <span class="min-w-[16px] text-center text-xs font-bold ${cart[dish.id]?'':'hidden'}">${cart[dish.id]||0}</span>
@@ -466,7 +466,7 @@
             <p class="text-sm text-warm"><span class="font-bold">AB提示：</span>${dish.tips}</p>
           </div>`:''}
           <button id="detailAdd" class="mt-6 w-full h-14 rounded-2xl bg-prime text-ink text-base font-bold active:scale-95 transition-all duration-150">
-            我要吃这个！ · ${cart[dish.id]||0} 份
+            ${dish.category==='饮品'?'我要喝这个！':'我要吃这个！'} · ${cart[dish.id]||0} 份
           </button>
         </div>`;
       $('#dishModal').classList.remove('hidden');
