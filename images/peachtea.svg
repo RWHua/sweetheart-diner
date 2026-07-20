@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="320" rx="160" ry="40" fill="#2a2a2a"/>
+  <rect x="130" y="140" width="140" height="160" rx="20" fill="#2a2a2a" stroke="#8ab4f8" stroke-width="2"/>
+  <ellipse cx="200" cy="240" rx="50" ry="15" fill="#3a3a2a"/>
+  <circle cx="175" cy="200" r="22" fill="#f5a0b0"/>
+  <circle cx="225" cy="210" r="18" fill="#f5a0b0"/>
+  <circle cx="200" cy="185" r="20" fill="#f8b8c8"/>
+  <rect x="145" y="260" width="110" height="8" rx="4" fill="#d4a03c"/>
+  <circle cx="200" cy="220" r="3" fill="#8ab4f8"/>
+  <circle cx="180" cy="230" r="2" fill="#8ab4f8"/>
+  <circle cx="215" cy="225" r="2" fill="#8ab4f8"/>
+  <text x="200" y="115" text-anchor="middle" fill="#c9a96e" font-size="22" font-weight="bold">蜜 桃 乌 龙</text>
+  <text x="200" y="320" text-anchor="middle" fill="#888" font-size="14">清甜茶香 · 粉色心情</text>
+</svg>

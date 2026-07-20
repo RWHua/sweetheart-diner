@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="320" rx="160" ry="40" fill="#2a2a2a"/>
+  <rect x="115" y="140" width="170" height="110" rx="30" fill="#2a2218" stroke="#8a6a3a" stroke-width="2"/>
+  <ellipse cx="200" cy="195" rx="70" ry="40" fill="#e8d5a3" opacity="0.8"/>
+  <circle cx="160" cy="180" r="8" fill="#f5a060"/>
+  <circle cx="230" cy="190" r="7" fill="#f5a060"/>
+  <circle cx="185" cy="210" r="6" fill="#90c060"/>
+  <circle cx="215" cy="205" r="6" fill="#90c060"/>
+  <circle cx="200" cy="185" r="5" fill="#f0c060"/>
+  <ellipse cx="170" cy="200" rx="12" ry="6" fill="#ff9090" opacity="0.7"/>
+  <ellipse cx="230" cy="175" rx="8" ry="4" fill="#ff9090" opacity="0.7"/>
+  <text x="200" y="120" text-anchor="middle" fill="#c9a96e" font-size="22" font-weight="bold">扬 州 炒 饭</text>
+  <text x="200" y="280" text-anchor="middle" fill="#888" font-size="14">粒粒分明 · 家的味道</text>
+</svg>

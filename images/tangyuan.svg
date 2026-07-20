@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="320" rx="160" ry="40" fill="#2a2a2a"/>
+  <rect x="120" y="150" width="160" height="100" rx="30" fill="#2a2218" stroke="#c9a96e" stroke-width="2"/>
+  <circle cx="160" cy="195" r="18" fill="#f5f0e0"/>
+  <circle cx="200" cy="185" r="16" fill="#f5f0e0"/>
+  <circle cx="240" cy="195" r="18" fill="#f5f0e0"/>
+  <circle cx="180" cy="215" r="14" fill="#f5f0e0"/>
+  <circle cx="220" cy="210" r="15" fill="#f5f0e0"/>
+  <circle cx="160" cy="200" r="4" fill="#d4a03c"/>
+  <circle cx="240" cy="200" r="4" fill="#d4a03c"/>
+  <circle cx="200" cy="195" r="3" fill="#d4a03c"/>
+  <text x="200" y="125" text-anchor="middle" fill="#c9a96e" font-size="22" font-weight="bold">桂花酒酿圆子</text>
+  <text x="200" y="285" text-anchor="middle" fill="#888" font-size="14">软糯香甜 · 暖心浪漫</text>
+</svg>

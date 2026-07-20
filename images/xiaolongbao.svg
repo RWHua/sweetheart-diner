@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="320" rx="160" ry="40" fill="#2a2a2a"/>
+  <rect x="120" y="150" width="160" height="80" rx="25" fill="#2a2218" stroke="#8a6a3a" stroke-width="2"/>
+  <ellipse cx="165" cy="190" rx="30" ry="22" fill="#f5f0e0"/>
+  <ellipse cx="235" cy="190" rx="30" ry="22" fill="#f5f0e0"/>
+  <path d="M135 185 Q165 155 195 185" fill="none" stroke="#d4a03c" stroke-width="2"/>
+  <path d="M205 185 Q235 155 265 185" fill="none" stroke="#d4a03c" stroke-width="2"/>
+  <ellipse cx="200" cy="200" rx="20" ry="12" fill="#f5f0e0" opacity="0.6"/>
+  <circle cx="140" cy="195" r="1.5" fill="#c9a96e"/>
+  <circle cx="260" cy="195" r="1.5" fill="#c9a96e"/>
+  <text x="200" y="120" text-anchor="middle" fill="#c9a96e" font-size="22" font-weight="bold">鲜肉小笼包</text>
+  <text x="200" y="280" text-anchor="middle" fill="#888" font-size="14">皮薄汁多 · 幸福会烫</text>
+</svg>

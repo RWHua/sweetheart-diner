@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="320" rx="160" ry="40" fill="#2a2a2a"/>
+  <ellipse cx="200" cy="180" rx="110" ry="60" fill="#2a2218" stroke="#c9a96e" stroke-width="3"/>
+  <path d="M120 180 Q140 130 200 140 Q260 130 280 180" fill="#d4a03c" stroke="#e8b84b" stroke-width="2"/>
+  <ellipse cx="200" cy="180" rx="60" ry="35" fill="#e8b84b" opacity="0.3"/>
+  <circle cx="140" cy="175" r="5" fill="#333"/>
+  <circle cx="260" cy="170" r="5" fill="#333"/>
+  <text x="200" y="120" text-anchor="middle" fill="#c9a96e" font-size="22" font-weight="bold">糖 醋 鲤 鱼</text>
+  <text x="200" y="280" text-anchor="middle" fill="#888" font-size="14">外焦里嫩 · 甜蜜告白</text>
+</svg>

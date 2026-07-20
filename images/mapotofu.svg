@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#1a1a1a"/>
+  <ellipse cx="200" cy="320" rx="160" ry="40" fill="#2a2a2a"/>
+  <rect x="110" y="150" width="180" height="130" rx="35" fill="#3a1a1a" stroke="#cc4444" stroke-width="3"/>
+  <rect x="140" y="170" width="30" height="30" rx="8" fill="#f5f0e0"/>
+  <rect x="180" y="165" width="30" height="30" rx="8" fill="#f5f0e0"/>
+  <rect x="220" y="175" width="30" height="30" rx="8" fill="#f5f0e0"/>
+  <rect x="160" y="210" width="30" height="30" rx="8" fill="#f5f0e0"/>
+  <rect x="200" y="215" width="30" height="30" rx="8" fill="#f5f0e0"/>
+  <circle cx="140" cy="220" r="2" fill="#6b3a3a"/>
+  <circle cx="260" cy="190" r="2" fill="#6b3a3a"/>
+  <text x="200" y="120" text-anchor="middle" fill="#c9a96e" font-size="22" font-weight="bold">麻 婆 豆 腐</text>
+  <text x="200" y="300" text-anchor="middle" fill="#888" font-size="14">麻辣鲜香 · 软嫩下饭</text>
+</svg>
