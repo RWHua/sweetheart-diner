@@ -72,15 +72,15 @@ async function getTenantToken() {
  */
 async function sendFeishuMessage(content) {
   const appId = process.env.FEISHU_APP_ID;
-  const receiveId = process.env.FEISHU_RECEIVE_ID;
-  if (!appId || !receiveId) {
+  const chatId = process.env.FEISHU_CHAT_ID;
+  if (!appId || !chatId) {
     console.log('飞书配置缺失，跳过通知');
     return;
   }
   try {
     const token = await getTenantToken();
     const res = await fetch(
-      `https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id`,
+      `https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id`,
       {
         method: 'POST',
         headers: {
@@ -88,7 +88,7 @@ async function sendFeishuMessage(content) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          receive_id: receiveId,
+          receive_id: chatId,
           msg_type: 'text',
           content: JSON.stringify({ text: content })
         })
