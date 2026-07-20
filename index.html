@@ -667,6 +667,33 @@
       $('#homeDate').textContent = days[now.getDay()] + '  ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
       $('#homePeriod').textContent = h < 6 ? '凌晨' : h < 12 ? '上午' : h < 18 ? '下午' : '晚上';
 
+      // 动态主题色
+      let themeBg, themeCard, themeAccent, themePrime;
+      if (h >= 6 && h < 12) {
+        themeBg = '#0a1218'; themeCard = '#121a22'; themeAccent = '#1a2a3a'; themePrime = '#8ab4f8';
+      } else if (h >= 12 && h < 17) {
+        themeBg = '#0a1008'; themeCard = '#141a10'; themeAccent = '#2a3a1a'; themePrime = '#c9a96e';
+      } else if (h >= 17 && h < 20) {
+        themeBg = '#100808'; themeCard = '#1a1010'; themeAccent = '#3a1a1a'; themePrime = '#e8a088';
+      } else {
+        themeBg = '#0a0a0a'; themeCard = '#1a1a1a'; themeAccent = '#2a2a4a'; themePrime = '#8ab4f8';
+      }
+      let style = document.getElementById('dynamic-theme');
+      if (!style) { style = document.createElement('style'); style.id = 'dynamic-theme'; document.head.appendChild(style); }
+      style.textContent = `
+        .bg-ink{background-color:${themeBg}!important}
+        .bg-card{background-color:${themeCard}!important}
+        .bg-accent\\/20{background-color:${themeAccent}33!important}
+        .bg-accent\\/40{background-color:${themeAccent}66!important}
+        .bg-panel{background-color:${themeBg}!important}
+        .bg-prime{background-color:${themePrime}!important}
+        .bg-prime\\/20{background-color:${themePrime}33!important}
+        .bg-prime\\/30{background-color:${themePrime}4d!important}
+        .text-prime{color:${themePrime}!important}
+        .border-prime\\/40{border-color:${themePrime}66!important}
+        .border-accent\\/20{border-color:${themeAccent}33!important}
+      `;
+
       // 动态背景
       const hp = $('#homePage');
       const sun = hp.querySelector('[data-sky]');
