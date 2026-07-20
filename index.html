@@ -3,32 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#fff8f0">
+  <meta name="theme-color" content="#0a0a0a">
   <title>专属点餐</title>
 
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
 
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            cream: '#fff8f0',
-            cocoa: '#5f4035',
-            peach: '#f29b83',
-            rose: '#f8d8cf',
-            mint: '#cfe8dc'
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace']
           },
-          boxShadow: {
-            soft: '0 8px 28px rgba(119, 76, 57, .10)'
+          colors: {
+            ink:    '#0a0a0a',
+            panel:  '#141414',
+            card:   '#1a1a1a',
+            accent: '#2a2a4a',
+            prime:  '#8ab4f8',
+            gold:   '#c9a96e',
+            warm:   '#b8956a',
+            tx:     '#e0e0e0',
+            mute:   '#888',
+            danger: '#e05555'
           },
           animation: {
-            'modal-in': 'modalIn .24s ease-out both'
+            'modal-in': 'modalIn .24s ease-out both',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite'
           },
           keyframes: {
             modalIn: {
               from: { opacity: '0', transform: 'translateY(18px)' },
               to:   { opacity: '1', transform: 'translateY(0)' }
+            },
+            pulseGlow: {
+              '0%,100%': { boxShadow: '0 0 6px rgba(138,180,248,.2)' },
+              '50%':     { boxShadow: '0 0 18px rgba(138,180,248,.5)' }
             }
           }
         }
@@ -36,475 +47,399 @@
     };
   </script>
 
-  <!-- 仅保留 Tailwind 无法覆盖的跨浏览器滚动条隐藏 -->
   <style>
     .scrollbar-hidden::-webkit-scrollbar { display: none; }
     .scrollbar-hidden { scrollbar-width: none; }
+    .text-shadow { text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+    .pixel-text { font-family: 'Press Start 2P', monospace; letter-spacing: .05em; }
+    .dish-img { aspect-ratio: 1; object-fit: cover; border-radius: 16px; }
   </style>
 </head>
 
-<body class="min-w-[320px] bg-cream text-cocoa antialiased">
+<body class="min-w-[320px] bg-ink text-tx antialiased overflow-x-hidden">
 
-  <!-- ==================== 顶部标题栏 + 分类Tab ==================== -->
-  <header class="fixed inset-x-0 top-0 z-30 border-b border-rose/60 bg-cream/95 backdrop-blur">
-    <div class="mx-auto max-w-[430px] px-5 pb-3 pt-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-xs tracking-[.25em] text-peach">♡ FOR TWO ♡</p>
-          <h1 class="mt-1 text-2xl font-bold tracking-wide">专属点餐</h1>
-        </div>
-        <button id="ordersBtn" class="active:scale-95 active:opacity-80 flex h-11 w-11 items-center justify-center rounded-full bg-rose/60 text-lg transition-all duration-150" aria-label="订单历史">📋</button>
+  <!-- ====== 顶部标题栏 ====== -->
+  <header class="fixed inset-x-0 top-0 z-30 bg-ink/95 backdrop-blur border-b border-white/5">
+    <div class="max-w-[430px] mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-full bg-accent/40 flex items-center justify-center text-sm">🍽️</div>
+        <h1 class="pixel-text text-xs text-prime tracking-wider">专属点餐</h1>
       </div>
-
-      <nav id="categoryTabs" class="scrollbar-hidden mt-4 flex gap-2 overflow-x-auto pb-1" aria-label="菜品分类"></nav>
+      <button id="ordersBtn" class="active:scale-95 text-mute hover:text-tx text-xl transition-all duration-150">📋</button>
     </div>
   </header>
 
-  <!-- ==================== 菜品列表 ==================== -->
-  <main class="mx-auto max-w-[430px] px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-36">
-    <div class="mb-3 flex items-end justify-between px-1">
-      <div>
-        <p class="text-sm text-cocoa/55">今天也要好好吃饭</p>
-        <h2 id="categoryTitle" class="mt-1 text-lg font-bold"></h2>
-      </div>
-      <span class="text-2xl">🌷</span>
-    </div>
+  <!-- ====== 左侧分类栏 + 右侧内容 ====== -->
+  <main class="max-w-[430px] mx-auto flex pt-14 pb-24 min-h-screen">
 
-    <section id="menuList" class="space-y-3" aria-live="polite"></section>
+    <!-- 左侧竖栏 -->
+    <nav id="sidebar" class="w-[90px] shrink-0 border-r border-white/5 pt-4 flex flex-col gap-1 px-2"></nav>
+
+    <!-- 右侧菜品列表 -->
+    <div class="flex-1 min-w-0 px-3 pt-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <p class="text-[10px] pixel-text text-mute uppercase tracking-wider">Taste</p>
+          <h2 id="categoryTitle" class="text-lg font-bold text-tx"></h2>
+        </div>
+        <span id="sumBadge" class="text-xs text-mute bg-white/5 rounded-full px-3 py-1">SUM: 0</span>
+      </div>
+      <section id="menuList" class="space-y-3" aria-live="polite"></section>
+    </div>
   </main>
 
-  <!-- ==================== 底部购物车悬浮栏 ==================== -->
-  <div id="cartBar" class="fixed inset-x-0 bottom-0 z-30 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"></div>
+  <!-- ====== 底部固定栏 ====== -->
+  <div id="cartBar" class="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] bg-ink/95 backdrop-blur border-t border-white/5"></div>
 
-  <!-- ==================== 菜品详情弹窗 ==================== -->
-  <div id="dishModal" class="fixed inset-0 z-50 hidden bg-cocoa/30 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-    <div class="animate-modal-in mx-auto flex h-full max-w-[430px] flex-col overflow-hidden rounded-[2rem] bg-cream shadow-2xl">
-      <div id="dishDetail" class="flex-1 overflow-y-auto"></div>
-    </div>
+  <!-- ====== 菜品详情弹窗 ====== -->
+  <div id="dishModal" class="fixed inset-0 z-50 hidden bg-ink/80 backdrop-blur-sm p-0" role="dialog" aria-modal="true">
+    <div class="animate-modal-in mx-auto max-w-[430px] h-full bg-panel overflow-y-auto"></div>
   </div>
 
-  <!-- ==================== 购物车全屏弹窗 ==================== -->
-  <div id="cartModal" class="fixed inset-0 z-50 hidden bg-cocoa/30 p-0 backdrop-blur-sm" role="dialog" aria-modal="true">
-    <div class="animate-modal-in mx-auto flex h-full max-w-[430px] flex-col bg-cream">
-      <!-- 标题栏 -->
-      <div class="flex items-center justify-between border-b border-rose/70 px-5 py-4">
+  <!-- ====== 购物车弹窗 ====== -->
+  <div id="cartModal" class="fixed inset-0 z-50 hidden bg-ink/80 backdrop-blur-sm p-0" role="dialog" aria-modal="true">
+    <div class="animate-modal-in mx-auto max-w-[430px] h-full flex flex-col bg-panel">
+      <div class="flex items-center justify-between px-4 py-4 border-b border-white/5">
         <div>
-          <p class="text-xs tracking-[.2em] text-peach">YOUR ORDER</p>
-          <h2 class="text-xl font-bold">购物车</h2>
+          <p class="text-[10px] pixel-text text-mute">Cart</p>
+          <h2 class="text-lg font-bold text-tx">购物车</h2>
         </div>
         <div class="flex items-center gap-2">
-          <button id="clearCart" class="active:scale-95 active:opacity-80 flex h-11 w-11 items-center justify-center rounded-full bg-rose/50 text-sm font-bold text-cocoa/60 transition-all duration-150" aria-label="清空购物车">清空</button>
-          <button id="closeCart" class="active:scale-95 active:opacity-80 flex h-11 w-11 items-center justify-center rounded-full bg-rose/50 text-xl transition-all duration-150" aria-label="关闭购物车">×</button>
+          <button id="clearCart" class="text-xs text-mute hover:text-danger px-3 py-2 active:scale-95 transition-all">清空</button>
+          <button id="closeCart" class="text-2xl text-mute hover:text-tx px-2 active:scale-95 transition-all">×</button>
         </div>
       </div>
-
-      <!-- 列表 + 备注 -->
       <div class="flex-1 overflow-y-auto px-4 py-4">
         <div id="cartItems" class="space-y-3"></div>
-
-        <div id="emptyCart" class="hidden py-20 text-center text-cocoa/55">
+        <div id="emptyCart" class="hidden py-20 text-center text-mute">
           <div class="text-5xl">🧺</div>
           <p class="mt-3">购物车还是空空的呢</p>
-          <button id="backToMenu" class="active:scale-95 active:opacity-80 mt-4 rounded-full bg-peach px-5 py-3 text-sm font-bold text-white transition-all duration-150">去选喜欢的</button>
+          <button id="backToMenu" class="mt-4 px-5 py-3 rounded-full bg-prime/20 text-prime text-sm font-bold active:scale-95 transition-all">去选喜欢的</button>
         </div>
-
-        <label class="mt-6 block text-sm font-bold">
-          给店家的小纸条
-          <span class="font-normal text-cocoa/40">（选填）</span>
-        </label>
-        <textarea id="orderNote" class="mt-2 h-24 w-full resize-none rounded-2xl border border-rose bg-white/70 p-3 text-sm outline-none transition focus:border-peach" placeholder="例如：少放香菜，或者写一句悄悄话…"></textarea>
+        <label class="mt-6 block text-sm font-bold text-tx">给店家的小纸条<span class="font-normal text-mute ml-1">（选填）</span></label>
+        <textarea id="orderNote" class="mt-2 h-24 w-full resize-none rounded-xl bg-card border border-white/5 p-3 text-sm text-tx outline-none focus:border-prime/40 transition" placeholder="例如：少放香菜，或者写一句悄悄话…"></textarea>
       </div>
-
-      <!-- 底部合计 + 提交 -->
-      <div class="border-t border-rose/70 bg-cream px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        <div class="mb-3 flex items-center justify-between px-1 text-sm">
-          <span class="text-cocoa/60">合计</span>
-          <strong id="cartTotal" class="text-xl text-peach">¥0</strong>
+      <div class="border-t border-white/5 px-4 pt-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        <div class="flex items-center justify-between mb-3 text-sm">
+          <span class="text-mute">合计</span>
+          <strong id="cartTotal" class="text-xl text-gold">¥0</strong>
         </div>
-        <button id="submitOrder" class="active:scale-95 active:opacity-80 mb-3 flex h-14 w-full items-center justify-center rounded-2xl bg-peach text-base font-bold text-white shadow-soft transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40">提交订单 · 让爱送达</button>
+        <button id="submitOrder" class="w-full h-14 rounded-2xl bg-prime text-ink font-bold text-base active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150">提交订单 · 让爱送达</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== 订单历史弹窗 ==================== -->
-  <div id="ordersModal" class="fixed inset-0 z-50 hidden bg-cocoa/30 p-0 backdrop-blur-sm" role="dialog" aria-modal="true">
-    <div class="animate-modal-in mx-auto flex h-full max-w-[430px] flex-col bg-cream">
-      <div class="flex items-center justify-between border-b border-rose/70 px-5 py-4">
+  <!-- ====== 订单历史弹窗 ====== -->
+  <div id="ordersModal" class="fixed inset-0 z-50 hidden bg-ink/80 backdrop-blur-sm p-0" role="dialog" aria-modal="true">
+    <div class="animate-modal-in mx-auto max-w-[430px] h-full flex flex-col bg-panel">
+      <div class="flex items-center justify-between px-4 py-4 border-b border-white/5">
         <div>
-          <p class="text-xs tracking-[.2em] text-peach">ORDER HISTORY</p>
-          <h2 class="text-xl font-bold">📋 订单历史</h2>
+          <p class="text-[10px] pixel-text text-mute">History</p>
+          <h2 class="text-lg font-bold text-tx">📋 订单历史</h2>
         </div>
-        <button id="closeOrdersModal" class="active:scale-95 active:opacity-80 flex h-11 w-11 items-center justify-center rounded-full bg-rose/50 text-xl transition-all duration-150" aria-label="关闭">×</button>
+        <button id="closeOrdersModal" class="text-2xl text-mute hover:text-tx px-2 active:scale-95 transition-all">×</button>
       </div>
       <div class="flex gap-2 px-4 pt-3">
-        <button id="tabToday" class="active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-cocoa text-white shadow-soft">今日</button>
-        <button id="tabAll" class="active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-white/70 text-cocoa/60">全部</button>
+        <button id="tabToday" class="rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-prime text-ink">今日</button>
+        <button id="tabAll" class="rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-white/5 text-mute">全部</button>
       </div>
-      <div id="ordersContent" class="flex-1 overflow-y-auto px-4 py-4">
-        <p class="text-center text-cocoa/40 py-20">加载中…</p>
-      </div>
+      <div id="ordersContent" class="flex-1 overflow-y-auto px-4 py-4"></div>
     </div>
   </div>
 
-  <!-- ==================== Toast 提示 ==================== -->
-  <div id="dishToast" class="fixed left-1/2 top-5 z-[60] hidden -translate-x-1/2 rounded-full bg-cocoa px-5 py-3 text-sm text-white shadow-lg"></div>
+  <!-- ====== Toast ====== -->
+  <div id="dishToast" class="fixed left-1/2 top-5 z-[60] hidden -translate-x-1/2 rounded-full bg-prime text-ink px-5 py-3 text-sm font-bold shadow-lg"></div>
 
-  <!-- ==================== 脚本 ==================== -->
+  <!-- ====== 脚本 ====== -->
   <script>
+    const $ = s => document.querySelector(s);
+
     const menuList = [
-      { id: 'guobaorou',  category: '东北菜', name: '锅包肉',       price: 0, desc: '酸甜酥脆，咬一口就是家乡味。',      img: './images/guobaorou.jpg',  ingredients: '精选里脊、米醋、白糖、胡萝卜丝与葱姜。',               detail: '外酥里嫩的经典东北菜，酸甜口感像我们第一次约会时的心情。',             nutrition: '碳水 42% · 蛋白质 28% · 脂肪 30%' },
-      { id: 'mapotofu',   category: '川菜',   name: '麻婆豆腐',     price: 0, desc: '麻辣鲜香，软嫩豆腐超下饭。',        img: './images/mapotofu.jpg',   ingredients: '嫩豆腐、牛肉末、郫县豆瓣、花椒与小葱。',                   detail: '一勺热乎乎的豆腐，带来刚刚好的麻辣和满满的满足感。',               nutrition: '碳水 18% · 蛋白质 34% · 脂肪 48%' },
-      { id: 'donganji',   category: '湘菜',   name: '东安子鸡',     price: 0, desc: '酸辣开胃，鲜嫩多汁的湘味。',        img: './images/donganji.jpg',   ingredients: '嫩鸡、米醋、泡椒、鲜姜与香葱。',                           detail: '酸辣鲜香的湖南风味，适合和最爱的人一起分享。',                     nutrition: '碳水 12% · 蛋白质 51% · 脂肪 37%' },
-      { id: 'tangcuyu',   category: '鲁菜',   name: '糖醋鲤鱼',     price: 0, desc: '外焦里嫩，甜蜜得像一句告白。',      img: './images/tangcuyu.jpg',   ingredients: '鲜活鲤鱼、陈醋、冰糖、番茄与松子。',                         detail: '造型漂亮、滋味甜蜜，愿我们的日子年年有余。',                       nutrition: '碳水 35% · 蛋白质 39% · 脂肪 26%' },
-      { id: 'peachtea',   category: '饮品',   name: '蜜桃乌龙',     price: 0, desc: '清甜茶香，给今天加一点粉色。',      img: './images/peachtea.jpg',   ingredients: '水蜜桃、乌龙茶、蜂蜜与薄荷。',                               detail: '清爽不腻的蜜桃香气，适合饭后一起碰杯。',                           nutrition: '碳水 88% · 蛋白质 2% · 脂肪 10%' },
-      { id: 'tangyuan',   category: '甜品',   name: '桂花酒酿圆子', price: 0, desc: '软糯香甜，饭后的一点小浪漫。',      img: './images/tangyuan.jpg',   ingredients: '糯米圆子、酒酿、桂花与红糖。',                               detail: '一碗热乎乎的小圆子，愿我们团团圆圆、甜甜蜜蜜。',                   nutrition: '碳水 76% · 蛋白质 8% · 脂肪 16%' },
-      { id: 'danchaofan', category: '主食',   name: '扬州炒饭',     price: 0, desc: '粒粒分明，简单却永远吃不腻。',      img: './images/danchaofan.jpg', ingredients: '隔夜米饭、鸡蛋、虾仁、玉米与青豆。',                       detail: '一份认真炒好的主食，把平凡的日子也变得闪闪发光。',                 nutrition: '碳水 58% · 蛋白质 22% · 脂肪 20%' },
-      { id: 'xiaolongbao',category: '主食',   name: '鲜肉小笼包',   price: 0, desc: '皮薄汁多，小心烫，幸福也会烫。',    img: './images/xiaolongbao.jpg',ingredients: '面粉、鲜猪肉、皮冻、葱姜水。',                             detail: '轻轻提起，先开窗再喝汤，是早餐桌上的温柔仪式。',                   nutrition: '碳水 45% · 蛋白质 25% · 脂肪 30%' }
+      { id:'guobaorou',  category:'东北菜', name:'锅包肉',       price:0, desc:'酸甜酥脆，咬一口就是家乡味。',    img:'./images/guobaorou.jpg',  ingredients:'精选里脊、米醋、白糖、胡萝卜丝与葱姜。',              detail:'外酥里嫩的经典东北菜，酸甜口感像我们第一次约会时的心情。',            nutrition:'碳水 42% · 蛋白质 28% · 脂肪 30%', taste:5.0, selectedCount:28, steps:['里脊肉切薄片，加料酒、盐腌制15分钟。','土豆淀粉加水调成糊，肉片裹糊。','油温七成热下锅炸至金黄捞出。','另起锅，糖醋汁翻炒至浓稠，下肉片快速翻匀出锅。'], tips:'糖醋比例 3:2 最佳，炸两次更酥脆。' },
+      { id:'mapotofu',   category:'川菜',   name:'麻婆豆腐',     price:0, desc:'麻辣鲜香，软嫩豆腐超下饭。',      img:'./images/mapotofu.jpg',   ingredients:'嫩豆腐、牛肉末、郫县豆瓣、花椒与小葱。',                 detail:'一勺热乎乎的豆腐，带来刚刚好的麻辣和满满的满足感。',              nutrition:'碳水 18% · 蛋白质 34% · 脂肪 48%', taste:4.8, selectedCount:35, steps:['嫩豆腐切2cm方块，焯水去腥。','牛肉末炒至变色，加郫县豆瓣炒出红油。','加高汤煮沸，下豆腐小火煮5分钟。','勾芡收汁，撒花椒面和小葱出锅。'], tips:'豆腐不要翻动太猛，轻轻推即可保持完整。' },
+      { id:'donganji',   category:'湘菜',   name:'东安子鸡',     price:0, desc:'酸辣开胃，鲜嫩多汁的湘味。',      img:'./images/donganji.jpg',   ingredients:'嫩鸡、米醋、泡椒、鲜姜与香葱。',                         detail:'酸辣鲜香的湖南风味，适合和最爱的人一起分享。',                    nutrition:'碳水 12% · 蛋白质 51% · 脂肪 37%', taste:4.7, selectedCount:19, steps:['鸡肉切块，冷水下锅加姜片料酒焯水。','锅中热油，下姜丝、泡椒爆香。','加入鸡块翻炒，倒入米醋和少许糖。','小火焖煮15分钟至入味，出锅撒葱丝。'], tips:'用嫩鸡腿肉口感最佳，醋量按个人喜好调整。' },
+      { id:'tangcuyu',   category:'鲁菜',   name:'糖醋鲤鱼',     price:0, desc:'外焦里嫩，甜蜜得像一句告白。',    img:'./images/tangcuyu.jpg',   ingredients:'鲜活鲤鱼、陈醋、冰糖、番茄与松子。',                       detail:'造型漂亮、滋味甜蜜，愿我们的日子年年有余。',                      nutrition:'碳水 35% · 蛋白质 39% · 脂肪 26%', taste:4.9, selectedCount:22, steps:['鲤鱼处理干净，两面剞花刀。','鱼身抹淀粉，七八成油温炸至定型金黄。','另起锅，冰糖炒化加陈醋番茄酱调汁。','将糖醋汁浇在鱼身上，撒松子装饰。'], tips:'炸鱼时油温要高，快速定型外酥里嫩。' },
+      { id:'peachtea',   category:'饮品',   name:'蜜桃乌龙',     price:0, desc:'清甜茶香，给今天加一点粉色。',    img:'./images/peachtea.jpg',   ingredients:'水蜜桃、乌龙茶、蜂蜜与薄荷。',                             detail:'清爽不腻的蜜桃香气，适合饭后一起碰杯。',                          nutrition:'碳水 88% · 蛋白质 2% · 脂肪 10%', taste:4.6, selectedCount:41, steps:['水蜜桃去皮切小块。','乌龙茶叶用85°C热水冲泡3分钟。','杯中放入桃肉和冰块，倒入茶汤。','加蜂蜜搅拌，点缀薄荷叶。'], tips:'冷藏2小时后风味更佳，夏天加冰超爽。' },
+      { id:'tangyuan',   category:'甜品',   name:'桂花酒酿圆子', price:0, desc:'软糯香甜，饭后的一点小浪漫。',    img:'./images/tangyuan.jpg',   ingredients:'糯米圆子、酒酿、桂花与红糖。',                             detail:'一碗热乎乎的小圆子，愿我们团团圆圆、甜甜蜜蜜。',                  nutrition:'碳水 76% · 蛋白质 8% · 脂肪 16%', taste:5.0, selectedCount:33, steps:['糯米粉加水揉成面团，搓成小圆子。','水烧开下圆子，煮至浮起。','加入酒酿和红糖再煮2分钟。','盛碗撒干桂花。'], tips:'圆子搓小一点更Q弹，红糖量按甜度喜好。' },
+      { id:'danchaofan', category:'主食',   name:'扬州炒饭',     price:0, desc:'粒粒分明，简单却永远吃不腻。',    img:'./images/danchaofan.jpg', ingredients:'隔夜米饭、鸡蛋、虾仁、玉米与青豆。',                     detail:'一份认真炒好的主食，把平凡的日子也变得闪闪发光。',                nutrition:'碳水 58% · 蛋白质 22% · 脂肪 20%', taste:4.5, selectedCount:26, steps:['鸡蛋打散炒熟盛出备用。','锅中热油，炒虾仁和玉米青豆。','加入隔夜米饭大火翻炒至粒粒分明。','倒入鸡蛋碎，加盐和葱花翻匀出锅。'], tips:'隔夜饭效果最好，大火快炒是关键。' },
+      { id:'xiaolongbao',category:'主食',   name:'鲜肉小笼包',   price:0, desc:'皮薄汁多，小心烫，幸福也会烫。',  img:'./images/xiaolongbao.jpg',ingredients:'面粉、鲜猪肉、皮冻、葱姜水。',                           detail:'轻轻提起，先开窗再喝汤，是早餐桌上的温柔仪式。',                  nutrition:'碳水 45% · 蛋白质 25% · 脂肪 30%', taste:4.9, selectedCount:38, steps:['面粉加温水揉成光滑面团醒30分钟。','猪肉剁碎加皮冻、葱姜水、生抽调馅。','面团擀成薄皮，包入馅料捏褶。','上蒸笼大火蒸8分钟。'], tips:'皮冻是汤汁的关键，提前一天准备。' }
     ];
 
     const categories = ['东北菜','川菜','湘菜','鲁菜','饮品','甜品','主食'];
     let activeCategory = categories[0];
     let cart = JSON.parse(localStorage.getItem('sweetheart-cart') || '{}');
 
-    const $ = s => document.querySelector(s);
-
     const money = v => '¥' + v.toFixed(0);
-
     const getDish = id => menuList.find(d => d.id === id);
-
     const saveCart = () => localStorage.setItem('sweetheart-cart', JSON.stringify(cart));
+    const cartEntries = () => Object.entries(cart).filter(([,q])=>q>0).map(([id,q])=>({dish:getDish(id),quantity:q})).filter(({dish})=>dish);
+    const cartCount = () => cartEntries().reduce((s,e)=>s+e.quantity,0);
+    const cartTotal = () => cartEntries().reduce((s,e)=>s+e.dish.price*e.quantity,0);
 
-    const cartEntries = () =>
-      Object.entries(cart)
-        .filter(([,q]) => q > 0)
-        .map(([id, q]) => ({ dish: getDish(id), quantity: q }))
-        .filter(({ dish }) => dish);
-
-    const cartCount = () => cartEntries().reduce((s, e) => s + e.quantity, 0);
-    const cartTotal = () => cartEntries().reduce((s, e) => s + e.dish.price * e.quantity, 0);
-
-    /* ---------- 数量变更 ---------- */
     function changeQuantity(id, delta) {
-      cart[id] = Math.max(0, (cart[id] || 0) + delta);
+      cart[id] = Math.max(0, (cart[id]||0)+delta);
       if (!cart[id]) delete cart[id];
-      saveCart();
-      renderMenu();
-      renderCartBar();
-      renderCartModal();
+      saveCart(); renderMenu(); renderCartBar(); renderCartModal();
     }
 
-    /* ---------- 分类Tab ---------- */
-    function renderTabs() {
-      $('#categoryTabs').innerHTML = categories.map(c => {
+    /* ---- 左侧竖栏 ---- */
+    function renderSidebar() {
+      $('#sidebar').innerHTML = categories.map(c => {
         const a = c === activeCategory;
-        return `<button class="active:scale-95 active:opacity-80 shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 ${
-          a ? 'bg-cocoa text-white shadow-soft' : 'bg-white/70 text-cocoa/60'
-        }" data-category="${c}">${c}</button>`;
+        return `<button class="w-full text-left rounded-xl px-2 py-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
+          a ? 'bg-accent text-prime' : 'text-mute hover:text-tx hover:bg-white/5'
+        }" data-cat="${c}">${c}</button>`;
       }).join('');
-
-      document.querySelectorAll('[data-category]').forEach(b =>
-        b.addEventListener('click', () => { activeCategory = b.dataset.category; renderTabs(); renderMenu(); })
+      document.querySelectorAll('[data-cat]').forEach(b =>
+        b.addEventListener('click', () => { activeCategory = b.dataset.cat; renderSidebar(); renderMenu(); })
       );
     }
 
-    /* ---------- 图片（含 fallback） ---------- */
+    /* ---- 菜品卡片 ---- */
     function dishImage(dish) {
-      return `<img src="${dish.img}" alt="${dish.name}" class="h-full w-full object-cover"
-        onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%23f8d8cf%22/%3E%3Ctext x=%22100%22 y=%22115%22 text-anchor=%22middle%22 font-size=%2256%22%3E🍲%3C/text%3E%3C/svg%3E'">`;
+      return `<div class="w-[120px] h-[120px] shrink-0 rounded-2xl overflow-hidden bg-white/5 border border-white/5 p-1">
+        <img src="${dish.img}" alt="${dish.name}" class="w-full h-full object-cover rounded-xl"
+          onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a1a%22/%3E%3Ctext x=%22100%22 y=%22115%22 text-anchor=%22middle%22 font-size=%2256%22%3E🍲%3C/text%3E%3C/svg%3E'"></div>`;
     }
 
-    /* ---------- 加减按钮 ---------- */
-    function quantityControl(dish) {
-      const q = cart[dish.id] || 0;
-      return `<div class="flex items-center gap-2">
-        <button class="active:scale-95 active:opacity-80 flex h-9 w-9 items-center justify-center rounded-full bg-rose text-lg font-bold text-cocoa/70 transition-all duration-150 ${q ? '' : 'invisible'}"
-          data-minus="${dish.id}" aria-label="减少${dish.name}">−</button>
-        <span class="min-w-[1rem] text-center text-sm font-bold ${q ? '' : 'hidden'}">${q}</span>
-        <button class="active:scale-95 active:opacity-80 flex h-9 w-9 items-center justify-center rounded-full bg-peach text-xl font-medium text-white transition-all duration-150"
-          data-plus="${dish.id}" aria-label="增加${dish.name}">+</button>
-      </div>`;
+    function starRating(n) {
+      const full = Math.floor(n);
+      const half = n - full >= 0.5;
+      let s = '';
+      for (let i=0;i<5;i++) s += i<full ? '★' : (i===full&&half ? '⯪' : '☆');
+      return `<span class="text-gold text-xs">${s} ${n.toFixed(1)}</span>`;
     }
 
-    /* ---------- 菜品列表 ---------- */
     function renderMenu() {
       const dishes = menuList.filter(d => d.category === activeCategory);
       $('#categoryTitle').textContent = activeCategory;
+      $('#sumBadge').textContent = 'SUM: ' + dishes.length;
 
       $('#menuList').innerHTML = dishes.map(dish => `
-        <article class="flex gap-3 rounded-3xl bg-white/75 p-3 shadow-soft">
-          <button class="active:scale-95 active:opacity-80 h-28 w-28 shrink-0 overflow-hidden rounded-2xl bg-rose transition-all duration-150" data-detail="${dish.id}">
+        <article class="flex gap-3 rounded-2xl bg-card border border-white/5 p-3 hover:border-white/10 transition-all duration-200">
+          <button class="shrink-0 active:scale-95 transition-all duration-150" data-detail="${dish.id}">
             ${dishImage(dish)}
           </button>
           <div class="flex min-w-0 flex-1 flex-col justify-between py-1">
             <button class="text-left" data-detail="${dish.id}">
-              <h3 class="truncate text-base font-bold">${dish.name}</h3>
-              <p class="mt-1 line-clamp-2 text-xs leading-5 text-cocoa/55">${dish.desc}</p>
+              <h3 class="truncate text-base font-bold text-tx">${dish.name}</h3>
+              <p class="mt-1 line-clamp-2 text-xs leading-5 text-mute">${dish.desc}</p>
+              <div class="flex items-center gap-2 mt-2">
+                ${starRating(dish.taste)}
+                <span class="text-[10px] text-mute bg-white/5 px-2 py-0.5 rounded">被选 ${(dish.selectedCount||0)} 次</span>
+              </div>
             </button>
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-peach">${money(dish.price)}</span>
-              ${quantityControl(dish)}
+            <div class="flex items-center gap-2 mt-2">
+              <button class="flex-1 h-10 rounded-xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150" data-want="${dish.id}">
+                我要吃这个！
+              </button>
+              <div class="flex items-center gap-1 shrink-0">
+                <button class="w-7 h-7 rounded-full bg-white/5 text-mute text-sm active:scale-95 ${cart[dish.id]?'':'invisible'}" data-minus="${dish.id}">−</button>
+                <span class="min-w-[14px] text-center text-xs font-bold ${cart[dish.id]?'':'hidden'}">${cart[dish.id]||0}</span>
+                <button class="w-7 h-7 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${dish.id}">+</button>
+              </div>
             </div>
           </div>
         </article>`).join('');
 
-      document.querySelectorAll('[data-plus]').forEach(b => b.addEventListener('click', () => changeQuantity(b.dataset.plus, 1)));
-      document.querySelectorAll('[data-minus]').forEach(b => b.addEventListener('click', () => changeQuantity(b.dataset.minus, -1)));
-      document.querySelectorAll('[data-detail]').forEach(b => b.addEventListener('click', () => openDish(b.dataset.detail)));
+      document.querySelectorAll('[data-plus]').forEach(b => b.addEventListener('click', ()=>changeQuantity(b.dataset.plus,1)));
+      document.querySelectorAll('[data-minus]').forEach(b => b.addEventListener('click', ()=>changeQuantity(b.dataset.minus,-1)));
+      document.querySelectorAll('[data-detail]').forEach(b => b.addEventListener('click', ()=>openDish(b.dataset.detail)));
+      document.querySelectorAll('[data-want]').forEach(b => b.addEventListener('click', ()=>{
+        changeQuantity(b.dataset.want, 1);
+        showToast('已加入 · ' + (getDish(b.dataset.want)?.name||''));
+      }));
     }
 
-    /* ---------- 购物车悬浮栏 ---------- */
+    /* ---- 底部悬浮栏 ---- */
     function renderCartBar() {
+      const n = cartCount();
       $('#cartBar').innerHTML = `
-        <button id="openCart" class="active:scale-95 active:opacity-80 mx-auto flex h-14 max-w-[398px] items-center justify-between rounded-2xl bg-cocoa px-4 text-white shadow-2xl transition-all duration-150">
-          <span class="flex items-center gap-3">
-            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-peach text-sm font-bold">${cartCount()}</span>
-            <span class="text-sm">已选 · 合计 <strong class="text-peach">${money(cartTotal())}</strong></span>
-          </span>
-          <span class="rounded-xl bg-white/15 px-3 py-2 text-sm font-bold">去结算 →</span>
-        </button>`;
-
-      $('#openCart').addEventListener('click', () => { renderCartModal(); $('#cartModal').classList.remove('hidden'); });
-    }
-
-    /* ---------- 购物车弹窗 ---------- */
-    function renderCartModal() {
-      const entries = cartEntries();
-      $('#emptyCart').classList.toggle('hidden', entries.length > 0);
-
-      $('#cartItems').innerHTML = entries.map(({ dish, quantity }) => `
-        <div class="flex items-center gap-3 rounded-2xl bg-white/75 p-3">
-          <div class="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-rose">${dishImage(dish)}</div>
-          <div class="min-w-0 flex-1">
-            <h3 class="truncate font-bold">${dish.name}</h3>
-            <p class="text-sm text-peach">${money(dish.price)}</p>
-          </div>
-          ${quantityControl(dish)}
-        </div>`).join('');
-
-      $('#cartTotal').textContent = money(cartTotal());
-      $('#submitOrder').disabled = !entries.length;
-
-      document.querySelectorAll('#cartItems [data-plus]').forEach(b =>
-        b.addEventListener('click', () => changeQuantity(b.dataset.plus, 1)));
-      document.querySelectorAll('#cartItems [data-minus]').forEach(b =>
-        b.addEventListener('click', () => changeQuantity(b.dataset.minus, -1)));
-    }
-
-    /* ---------- 菜品详情弹窗 ---------- */
-    function openDish(id) {
-      const dish = getDish(id);
-      $('#dishDetail').innerHTML = `
-        <div class="relative">
-          <div class="h-64 bg-rose">${dishImage(dish)}</div>
-          <button id="closeDish" class="active:scale-95 active:opacity-80 absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-xl transition-all duration-150">×</button>
-        </div>
-        <div class="p-5">
-          <div class="flex items-start justify-between">
-            <div>
-              <p class="text-xs tracking-widest text-peach">${dish.category}</p>
-              <h2 class="mt-1 text-2xl font-bold">${dish.name}</h2>
-            </div>
-            <span class="rounded-full bg-mint px-3 py-2 text-sm font-bold text-cocoa/70">${money(dish.price)}</span>
-          </div>
-          <p class="mt-5 leading-7 text-cocoa/70">${dish.detail}</p>
-          <div class="mt-5 rounded-2xl bg-white/70 p-4">
-            <h3 class="font-bold">食材</h3>
-            <p class="mt-2 text-sm leading-6 text-cocoa/60">${dish.ingredients}</p>
-          </div>
-          <div class="mt-3 rounded-2xl bg-rose/50 p-4">
-            <h3 class="font-bold">碳蛋脂比例</h3>
-            <p class="mt-2 text-sm text-cocoa/60">${dish.nutrition}</p>
-          </div>
-          <button id="detailAdd" class="active:scale-95 active:opacity-80 mt-6 h-14 w-full rounded-2xl bg-peach text-base font-bold text-white transition-all duration-150">
-            加入菜单 · ${cart[dish.id] || 0} 份
+        <div class="flex items-center gap-2 max-w-[414px] mx-auto">
+          <button id="openCart" class="flex-1 flex items-center justify-between h-14 rounded-2xl bg-card border border-white/10 px-4 active:scale-95 transition-all duration-150">
+            <span class="flex items-center gap-3">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-prime/20 text-prime text-sm font-bold">${n}</span>
+              <span class="text-sm text-mute">已选 · <strong class="text-gold">${money(cartTotal())}</strong></span>
+            </span>
+            <span class="text-xs text-mute">展开 ›</span>
+          </button>
+          <button id="randomPick" class="h-14 rounded-2xl bg-warm/20 text-warm text-xs font-bold px-4 active:scale-95 transition-all duration-150 whitespace-nowrap">
+            随便来一碗
           </button>
         </div>`;
+      $('#openCart').addEventListener('click', () => { renderCartModal(); $('#cartModal').classList.remove('hidden'); });
+      $('#randomPick').addEventListener('click', randomPick);
+    }
 
+    function randomPick() {
+      const dishes = menuList.filter(d => d.category === activeCategory);
+      if (!dishes.length) return;
+      const dish = dishes[Math.floor(Math.random()*dishes.length)];
+      changeQuantity(dish.id, 1);
+      showToast('🎲 今天吃「' + dish.name + '」吧！');
+    }
+
+    /* ---- 购物车弹窗 ---- */
+    function renderCartModal() {
+      const entries = cartEntries();
+      $('#emptyCart').classList.toggle('hidden', entries.length>0);
+      $('#cartItems').innerHTML = entries.map(({dish,quantity})=>`
+        <div class="flex items-center gap-3 rounded-xl bg-card border border-white/5 p-3">
+          <div class="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-white/5">${dishImage(dish)}</div>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate font-bold text-tx text-sm">${dish.name}</h3>
+            <p class="text-xs text-prime">${money(dish.price)}</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <button class="w-7 h-7 rounded-full bg-white/5 text-mute text-sm active:scale-95" data-minus="${dish.id}">−</button>
+            <span class="min-w-[14px] text-center text-xs font-bold">${quantity}</span>
+            <button class="w-7 h-7 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${dish.id}">+</button>
+          </div>
+        </div>`).join('');
+      $('#cartTotal').textContent = money(cartTotal());
+      $('#submitOrder').disabled = !entries.length;
+      document.querySelectorAll('#cartItems [data-plus]').forEach(b=>b.addEventListener('click',()=>changeQuantity(b.dataset.plus,1)));
+      document.querySelectorAll('#cartItems [data-minus]').forEach(b=>b.addEventListener('click',()=>changeQuantity(b.dataset.minus,-1)));
+    }
+
+    /* ---- 菜品详情弹窗 ---- */
+    function openDish(id) {
+      const dish = getDish(id);
+      const steps = dish.steps||[];
+      const el = $('#dishModal').querySelector('div');
+      el.innerHTML = `
+        <div class="relative">
+          <div class="aspect-square bg-panel overflow-hidden border-b border-white/5">${dishImage(dish).replace('w-[120px] h-[120px]','w-full h-full')}</div>
+          <button id="closeDish" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-ink/70 text-tx text-xl flex items-center justify-center active:scale-95 transition-all">×</button>
+        </div>
+        <div class="p-5">
+          <p class="text-[10px] pixel-text text-mute uppercase tracking-wider mb-1">Taste</p>
+          <h2 class="text-2xl font-bold text-tx">${dish.name}</h2>
+          <div class="flex items-center gap-3 mt-2">
+            ${starRating(dish.taste)}
+            <span class="text-xs text-mute">被选择 ${dish.selectedCount||0}</span>
+          </div>
+          <p class="mt-4 text-sm leading-7 text-mute">${dish.detail}</p>
+          <div class="mt-4 rounded-2xl bg-card border border-white/5 p-4">
+            <p class="text-[10px] pixel-text text-mute mb-2">Ingredients</p>
+            <h3 class="font-bold text-tx text-sm">食材准备</h3>
+            <p class="mt-2 text-sm text-mute leading-6">${dish.ingredients}</p>
+          </div>
+          <div class="mt-3 rounded-2xl bg-accent/20 border border-accent/20 p-4">
+            <h3 class="font-bold text-prime text-sm">碳蛋脂比例</h3>
+            <p class="mt-2 text-sm text-tx/70">${dish.nutrition}</p>
+          </div>
+          ${steps.length ? `
+          <div class="mt-4 rounded-2xl bg-card border border-white/5 p-4">
+            <p class="text-[10px] pixel-text text-mute mb-2">Tutorial</p>
+            <h3 class="font-bold text-tx text-sm">做法步骤</h3>
+            <div class="mt-3 space-y-3">
+              ${steps.map((s,i)=>`<div class="flex gap-3"><span class="w-6 h-6 shrink-0 rounded-full bg-prime/20 text-prime text-xs flex items-center justify-center font-bold">${i+1}</span><p class="text-sm text-mute leading-6">${s}</p></div>`).join('')}
+            </div>
+          </div>`:''}
+          ${dish.tips ? `
+          <div class="mt-4 rounded-2xl bg-warm/10 border border-warm/10 p-4">
+            <p class="text-sm text-warm"><span class="font-bold">AB提示：</span>${dish.tips}</p>
+          </div>`:''}
+          <button id="detailAdd" class="mt-6 w-full h-14 rounded-2xl bg-prime text-ink text-base font-bold active:scale-95 transition-all duration-150">
+            我要吃这个！ · ${cart[dish.id]||0} 份
+          </button>
+        </div>`;
       $('#dishModal').classList.remove('hidden');
       $('#closeDish').addEventListener('click', closeDish);
-      $('#detailAdd').addEventListener('click', () => {
-        changeQuantity(dish.id, 1);
-        $('#detailAdd').textContent = '已加入 · ' + cart[dish.id] + ' 份';
+      $('#detailAdd').addEventListener('click',()=>{
+        changeQuantity(dish.id,1);
+        $('#detailAdd').textContent = '我要吃这个！ · '+(cart[dish.id]||0)+' 份';
       });
     }
 
     function closeDish() { $('#dishModal').classList.add('hidden'); }
 
-    /* ---------- Toast ---------- */
+    /* ---- Toast ---- */
     function showToast(msg) {
-      const t = $('#dishToast');
-      t.textContent = msg;
-      t.classList.remove('hidden');
-      clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => t.classList.add('hidden'), 2600);
+      const t = $('#dishToast'); t.textContent = msg; t.classList.remove('hidden');
+      clearTimeout(showToast.timer); showToast.timer = setTimeout(()=>t.classList.add('hidden'),2600);
     }
 
-    /* ---------- 生成订单文本（失败降级用） ---------- */
+    /* ---- 订单提交 ---- */
+    function genOrderId() {
+      const now = new Date(), pad = n=>String(n).padStart(2,'0');
+      const rand = Math.random().toString(36).slice(2,6).toUpperCase();
+      return 'OD-'+now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'-'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds())+'-'+rand;
+    }
+
     function orderText() {
       const note = $('#orderNote').value.trim();
-      return ['【专属点餐】',
-        ...cartEntries().map(({ dish, q }) => dish.name + ' × ' + q),
-        '合计：' + money(cartTotal()),
-        note ? '备注：' + note : ''
-      ].filter(Boolean).join('\n');
+      return ['【专属点餐】',...cartEntries().map(({dish,q})=>dish.name+' × '+q),'合计：'+money(cartTotal()),note?'备注：'+note:''].filter(Boolean).join('\n');
     }
 
-    /* ---------- 生成可读订单号 ---------- */
-    function genOrderId() {
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-      return 'OD-' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) +
-             '-' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds()) +
-             '-' + rand;
-    }
-
-    /* ---------- 提交订单 ---------- */
     async function submitOrder() {
-      const entries = cartEntries();
-      if (!entries.length) return;
-
-      const btn = $('#submitOrder');
-      btn.disabled = true;
-      btn.textContent = '正在送出爱心…';
-
+      const entries = cartEntries(); if (!entries.length) return;
+      const btn = $('#submitOrder'); btn.disabled = true; btn.textContent = '正在送出爱心…';
       const orderId = genOrderId();
-      const payload = {
-        orderId,
-        items: entries.map(({ dish, quantity }) => ({ id: dish.id, name: dish.name, price: dish.price, quantity })),
-        total: cartTotal(),
-        note: $('#orderNote').value.trim(),
-        clientTime: new Date().toISOString()
-      };
-
+      const payload = { orderId, items: entries.map(({dish,quantity})=>({id:dish.id,name:dish.name,price:dish.price,quantity})), total: cartTotal(), note: $('#orderNote').value.trim(), clientTime: new Date().toISOString() };
       try {
-        const res = await fetch('/api/submit-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        const res = await fetch('/api/submit-order', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await res.json();
-        if (!res.ok || data.code !== 0) throw new Error(data.msg || '提交失败');
-
-        cart = {}; saveCart();
-        $('#orderNote').value = '';
-        $('#cartModal').classList.add('hidden');
+        if (!res.ok || data.code!==0) throw new Error(data.msg||'提交失败');
+        cart = {}; saveCart(); $('#orderNote').value = ''; $('#cartModal').classList.add('hidden');
         renderMenu(); renderCartBar();
-
         const feishu = data.feishu;
-        const feishuMsg = feishu
-          ? (feishu.ok ? '✅ 飞书通知已发送' : '⚠️ 飞书: ' + feishu.error)
-          : '';
-        showToast('订单提交成功，等你开饭啦 ♡' + (feishuMsg ? '\n' + feishuMsg : ''));
-      } catch (err) {
-        try {
-          await navigator.clipboard.writeText(orderText());
-          showToast('网络不太稳定，订单已复制，请手动发送');
-        } catch {
-          showToast('提交失败，请截图或手动记录订单');
-        }
-      } finally {
-        btn.disabled = !cartEntries().length;
-        btn.textContent = '提交订单 · 让爱送达';
-      }
+        showToast('订单提交成功，等你开饭啦 ♡'+(feishu?(feishu.ok?' ✅飞书通知已发送':' ⚠️飞书:'+feishu.error):''));
+      } catch(err) {
+        try { await navigator.clipboard.writeText(orderText()); showToast('网络不太稳定，订单已复制，请手动发送'); }
+        catch { showToast('提交失败，请截图或手动记录订单'); }
+      } finally { btn.disabled=!cartEntries().length; btn.textContent='提交订单 · 让爱送达'; }
     }
 
-    /* ---------- 清空购物车 ---------- */
-    function clearCartAll() {
-      if (!cartEntries().length) return;
-      cart = {};
-      saveCart();
-      renderMenu();
-      renderCartBar();
-      renderCartModal();
-      showToast('购物车已清空');
-    }
+    // 事件绑定
+    $('#closeCart').addEventListener('click', ()=>$('#cartModal').classList.add('hidden'));
+    $('#backToMenu').addEventListener('click', ()=>$('#cartModal').classList.add('hidden'));
+    $('#clearCart').addEventListener('click', ()=>{
+      if (!cartEntries().length) return; cart={}; saveCart(); renderMenu(); renderCartBar(); renderCartModal(); showToast('购物车已清空');
+    });
+    $('#submitOrder').addEventListener('click', submitOrder);
 
-    /* ---------- 订单历史 ---------- */
+    /* ---- 订单历史 ---- */
     let ordersTab = 'today';
-
     async function loadOrders() {
-      $('#ordersContent').innerHTML = '<p class="text-center text-cocoa/40 py-20">加载中…</p>';
+      $('#ordersContent').innerHTML = '<p class="text-center text-mute py-20">加载中…</p>';
       try {
-        const res = await fetch('/api/get-orders?type=' + ordersTab);
+        const res = await fetch('/api/get-orders?type='+ordersTab);
         const data = await res.json();
-        const orders = data.orders || [];
-
+        const orders = data.orders||[];
         if (!orders.length) {
-          $('#ordersContent').innerHTML = '<div class="py-20 text-center"><div class="text-5xl">🍽️</div><p class="mt-3 text-cocoa/55">' + (ordersTab === 'today' ? '今天还没有订单' : '还没有订单记录') + '</p></div>';
+          $('#ordersContent').innerHTML = '<div class="py-20 text-center"><div class="text-5xl">🍽️</div><p class="mt-3 text-mute">'+(ordersTab==='today'?'今天还没有订单':'还没有订单记录')+'</p></div>';
           return;
         }
-
-        $('#ordersContent').innerHTML = orders.map((o, i) => `
-          <div class="mb-3 rounded-2xl bg-white/75 p-4 shadow-soft relative group">
-            <button class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-rose/40 text-cocoa/40 text-sm active:scale-95 transition-all duration-150 hover:bg-red-200 hover:text-red-500" data-del="${o.orderId}" aria-label="删除订单">×</button>
+        $('#ordersContent').innerHTML = orders.map(o=>`
+          <div class="mb-3 rounded-2xl bg-card border border-white/5 p-4 relative group">
+            <button class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full text-mute/40 text-sm active:scale-95 hover:text-danger hover:bg-danger/10 transition-all" data-del="${o.orderId}">×</button>
             <div class="flex items-center justify-between mb-2 pr-8">
-              <span class="text-xs text-cocoa/40">${(o.clientTime || o.serverTime || '').slice(0, 16).replace('T', ' ')}</span>
-              <span class="text-xs text-peach font-bold">${o.orderId || ''}</span>
+              <span class="text-xs text-mute">${(o.clientTime||o.serverTime||'').slice(0,16).replace('T',' ')}</span>
+              <span class="text-xs text-gold font-bold">${o.orderId||''}</span>
             </div>
-            <div class="space-y-1">
-              ${(o.items || []).map(it => `<div class="flex justify-between text-sm"><span>${it.name} × ${it.quantity}</span><span class="text-peach">¥${(it.price * it.quantity).toFixed(0)}</span></div>`).join('')}
-            </div>
-            ${o.note ? '<p class="mt-2 text-xs text-cocoa/40">💬 ' + o.note + '</p>' : ''}
+            <div class="space-y-1">${(o.items||[]).map(it=>`<div class="flex justify-between text-sm"><span class="text-tx">${it.name} × ${it.quantity}</span><span class="text-prime">¥${(it.price*it.quantity).toFixed(0)}</span></div>`).join('')}</div>
+            ${o.note?`<p class="mt-2 text-xs text-mute">💬 ${o.note}</p>`:''}
           </div>`).join('');
-      } catch (e) {
-        $('#ordersContent').innerHTML = '<p class="text-center text-cocoa/40 py-20">加载失败，请重试</p>';
-      }
+      } catch(e) { $('#ordersContent').innerHTML = '<p class="text-center text-mute py-20">加载失败，请重试</p>'; }
     }
 
-    $('#ordersBtn').addEventListener('click', () => {
-      ordersTab = 'today';
-      $('#tabToday').className = 'active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-cocoa text-white shadow-soft';
-      $('#tabAll').className = 'active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-white/70 text-cocoa/60';
-      $('#ordersModal').classList.remove('hidden');
-      loadOrders();
-    });
-
-    $('#closeOrdersModal').addEventListener('click', () => $('#ordersModal').classList.add('hidden'));
-
-    $('#tabToday').addEventListener('click', () => {
-      ordersTab = 'today';
-      $('#tabToday').className = 'active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-cocoa text-white shadow-soft';
-      $('#tabAll').className = 'active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-white/70 text-cocoa/60';
-      loadOrders();
-    });
-
-    $('#tabAll').addEventListener('click', () => {
-      ordersTab = 'all';
-      $('#tabAll').className = 'active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-cocoa text-white shadow-soft';
-      $('#tabToday').className = 'active:scale-95 active:opacity-80 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150 bg-white/70 text-cocoa/60';
-      loadOrders();
-    });
-
-    /* ---------- 删除订单 ---------- */
     async function deleteOrder(orderId) {
-      try {
-        await fetch('/api/delete-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId })
-        });
-      } catch (e) {}
+      try { await fetch('/api/delete-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId})}); } catch(e) {}
       loadOrders();
     }
 
-    $('#ordersContent').addEventListener('click', e => {
-      const btn = e.target.closest('[data-del]');
-      if (btn) deleteOrder(btn.dataset.del);
+    $('#ordersBtn').addEventListener('click',()=>{
+      ordersTab='today'; $('#tabToday').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-prime text-ink'; $('#tabAll').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-white/5 text-mute'; $('#ordersModal').classList.remove('hidden'); loadOrders();
     });
+    $('#closeOrdersModal').addEventListener('click',()=>$('#ordersModal').classList.add('hidden'));
+    $('#tabToday').addEventListener('click',()=>{ ordersTab='today'; $('#tabToday').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-prime text-ink'; $('#tabAll').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-white/5 text-mute'; loadOrders(); });
+    $('#tabAll').addEventListener('click',()=>{ ordersTab='all'; $('#tabAll').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-prime text-ink'; $('#tabToday').className='rounded-full px-4 py-2 text-sm font-bold transition-all active:scale-95 bg-white/5 text-mute'; loadOrders(); });
+    $('#ordersContent').addEventListener('click',e=>{ const btn=e.target.closest('[data-del]'); if(btn) deleteOrder(btn.dataset.del); });
 
-    /* ---------- 事件绑定 ---------- */
-    $('#closeCart').addEventListener('click', () => $('#cartModal').classList.add('hidden'));
-    $('#backToMenu').addEventListener('click', () => $('#cartModal').classList.add('hidden'));
-    $('#clearCart').addEventListener('click', clearCartAll);
-    $('#submitOrder').addEventListener('click', submitOrder);
-    $('#dishModal').addEventListener('click', e => { if (e.target === $('#dishModal')) closeDish(); });
-
-    /* ---------- 初始渲染 ---------- */
-    renderTabs();
-    renderMenu();
-    renderCartBar();
-    renderCartModal();
+    // 启动
+    renderSidebar(); renderMenu(); renderCartBar();
   </script>
 </body>
 </html>
