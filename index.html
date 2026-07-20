@@ -250,28 +250,29 @@
       $('#sumBadge').textContent = 'SUM: ' + dishes.length;
 
       $('#menuList').innerHTML = dishes.map(dish => `
-        <article class="flex gap-3 rounded-2xl bg-card border border-white/5 p-3 hover:border-white/10 transition-all duration-200">
-          <button class="shrink-0 w-[130px] active:scale-95 transition-all duration-150" data-detail="${dish.id}">
-            ${dishImage(dish)}
-          </button>
-          <div class="flex min-w-0 flex-1 flex-col justify-between py-1">
-            <button class="text-left" data-detail="${dish.id}">
-              <h3 class="truncate text-base font-bold text-tx">${dish.name}</h3>
-              <p class="mt-1 line-clamp-2 text-xs leading-5 text-mute">${dish.desc}</p>
-              <div class="flex items-center gap-2 mt-2">
-                ${starRating(dish.taste)}
-                <span class="text-[10px] text-mute bg-white/5 px-2 py-0.5 rounded">被选 ${(dish.selectedCount||0)} 次</span>
-              </div>
+        <article class="rounded-2xl bg-card border border-white/5 p-3 hover:border-white/10 transition-all duration-200">
+          <div class="flex gap-3">
+            <button class="shrink-0 w-[120px] active:scale-95 transition-all duration-150" data-detail="${dish.id}">
+              ${dishImage(dish)}
             </button>
-            <div class="flex items-center gap-2 mt-2">
-              <button class="flex-1 h-10 rounded-xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150" data-want="${dish.id}">
-                我要吃这个！
+            <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+              <button class="text-left" data-detail="${dish.id}">
+                <h3 class="truncate text-base font-bold text-tx">${dish.name}</h3>
+                <p class="mt-1 text-xs leading-5 text-mute line-clamp-2">${dish.desc}</p>
+                <div class="flex items-center gap-2 mt-2">
+                  ${starRating(dish.taste)}
+                  <span class="text-[10px] text-mute bg-white/5 px-2 py-0.5 rounded">被选 ${(dish.selectedCount||0)} 次</span>
+                </div>
               </button>
-              <div class="flex items-center gap-1 shrink-0">
-                <button class="w-7 h-7 rounded-full bg-white/5 text-mute text-sm active:scale-95 ${cart[dish.id]?'':'invisible'}" data-minus="${dish.id}">−</button>
-                <span class="min-w-[14px] text-center text-xs font-bold ${cart[dish.id]?'':'hidden'}">${cart[dish.id]||0}</span>
-                <button class="w-7 h-7 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${dish.id}">+</button>
-              </div>
+              <button class="text-left w-fit mt-1 text-xs text-prime/70 border border-prime/30 rounded-lg px-3 py-1 active:scale-95 transition-all" data-detail="${dish.id}">查看做法 →</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mt-3">
+            <button class="flex-1 h-11 rounded-xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150" data-want="${dish.id}">我要吃这个！</button>
+            <div class="flex items-center gap-1 shrink-0">
+              <button class="w-8 h-8 rounded-full bg-white/5 text-mute text-sm active:scale-95 ${cart[dish.id]?'':'invisible'}" data-minus="${dish.id}">−</button>
+              <span class="min-w-[16px] text-center text-xs font-bold ${cart[dish.id]?'':'hidden'}">${cart[dish.id]||0}</span>
+              <button class="w-8 h-8 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${dish.id}">+</button>
             </div>
           </div>
         </article>`).join('');
@@ -302,46 +303,50 @@
           </button>
         </div>`;
       $('#openCart').addEventListener('click', () => { renderCartModal(); $('#cartModal').classList.remove('hidden'); });
-      $('#randomPick').addEventListener('click', randomPick);
+      $('#randomPick').addEventListener('click', () => window.rerollRandom());
     }
 
-    function randomPick() {
+    let randomDish = null;
+
+    window.rerollRandom = function() {
       const dishes = menuList.filter(d => d.category === activeCategory);
       if (!dishes.length) return;
-      let dish = dishes[Math.floor(Math.random()*dishes.length)];
+      randomDish = dishes[Math.floor(Math.random()*dishes.length)];
+      renderRandomModal();
+    };
 
-      function render() {
-        $('#randomInner').innerHTML = `
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <p class="text-[10px] pixel-text text-mute uppercase mb-1">Random</p>
-                <p class="text-xl font-bold text-tx">就它了？</p>
-              </div>
-              <button id="closeRandom" class="text-2xl text-mute hover:text-tx px-2 active:scale-95 transition-all">×</button>
+    window.confirmRandom = function() {
+      if (!randomDish) return;
+      changeQuantity(randomDish.id, 1);
+      $('#randomModal').style.display = 'none';
+      showToast('🎲 今天吃「' + randomDish.name + '」吧！');
+    };
+
+    window.closeRandom = function() {
+      $('#randomModal').style.display = 'none';
+    };
+
+    function renderRandomModal() {
+      const dish = randomDish;
+      $('#randomInner').innerHTML = `
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-[10px] pixel-text text-mute uppercase mb-1">Random</p>
+              <p class="text-xl font-bold text-tx">就它了？</p>
             </div>
-            <div class="flex justify-center py-4">
-              <div class="w-[220px]">${dishImage(dish)}</div>
-            </div>
-            <p class="text-center text-lg font-bold text-tx mt-3">${dish.name}</p>
-            <p class="text-center text-xs text-mute mt-1">${dish.desc}</p>
-            <div class="flex gap-3 mt-6">
-              <button id="rerollRandom" class="flex-1 h-12 rounded-2xl bg-white/5 border border-white/10 text-tx text-sm font-bold active:scale-95 transition-all duration-150">换一个</button>
-              <button id="confirmRandom" class="flex-1 h-12 rounded-2xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150">就这个！</button>
-            </div>
-          </div>`;
-        $('#closeRandom').addEventListener('click', ()=>$('#randomModal').style.display='none');
-        $('#rerollRandom').addEventListener('click', ()=>{
-          dish = dishes[Math.floor(Math.random()*dishes.length)];
-          render();
-        });
-        $('#confirmRandom').addEventListener('click', ()=>{
-          changeQuantity(dish.id, 1);
-          $('#randomModal').style.display='none';
-          showToast('🎲 今天吃「' + dish.name + '」吧！');
-        });
-      }
-      render();
+            <button onclick="closeRandom()" class="text-2xl text-mute hover:text-tx px-2 active:scale-95 transition-all">×</button>
+          </div>
+          <div class="flex justify-center py-4">
+            <div class="w-[220px]">${dishImage(dish)}</div>
+          </div>
+          <p class="text-center text-lg font-bold text-tx mt-3">${dish.name}</p>
+          <p class="text-center text-xs text-mute mt-1">${dish.desc}</p>
+          <div class="flex gap-3 mt-6">
+            <button onclick="rerollRandom()" class="flex-1 h-12 rounded-2xl bg-white/5 border border-white/10 text-tx text-sm font-bold active:scale-95 transition-all duration-150">换一个</button>
+            <button onclick="confirmRandom()" class="flex-1 h-12 rounded-2xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150">就这个！</button>
+          </div>
+        </div>`;
       $('#randomModal').style.display = 'flex';
     }
 
