@@ -1,5 +1,3 @@
-import { kv } from '@vercel/kv';
-
 /**
  * 参数校验
  */
@@ -95,12 +93,8 @@ export default async function handler(req, res) {
       serverTime: new Date().toISOString()
     };
 
-    // 并行：存 KV + 发通知
-    await Promise.all([
-      kv.set(orderId, orderRecord),
-      kv.sadd('orderList', orderId),
-      sendWebhook(formatOrder(orderRecord))
-    ]);
+    // 发送企业微信通知
+    await sendWebhook(formatOrder(orderRecord));
 
     return res.status(200).json({ code: 0, msg: '提交成功' });
   } catch (error) {
