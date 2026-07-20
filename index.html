@@ -120,7 +120,7 @@
         </button>
 
         <!-- DRK -->
-        <div class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#5a4030] p-4 flex items-center opacity-60">
+        <button id="drinkBtn" class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#5a4030] p-4 flex items-center active:scale-[.98] transition-all duration-200 hover:border-[#c9a96e] group">
           <div class="w-14 h-14 rounded-xl bg-[#2a1a10] flex items-center justify-center mr-4 shrink-0 border border-[#5a4030]/50">
             <span class="pixel-text text-2xl text-[#c9a96e]">？</span>
           </div>
@@ -130,7 +130,7 @@
             <p class="text-xs text-white/40 mt-0.5">这里不打烊，随便喝一杯</p>
           </div>
           <span class="text-[#c9a96e] text-xl">›</span>
-        </div>
+        </button>
 
         <!-- FM -->
         <div class="w-full rounded-2xl bg-[#0d1117]/90 border border-[#3a3a4a] p-4 flex items-center opacity-50">
@@ -670,14 +670,18 @@
     setInterval(updateHomeClock, 30000);
 
     // 启动
-    // 首页进入按钮
-    $('#enterBtn').addEventListener('click', () => {
+    function enterMenu(cat) {
       $('#homePage').style.display = 'none';
       document.querySelector('header').style.display = '';
       document.querySelector('main').style.display = '';
       $('#cartBar').style.display = '';
+      if (cat) activeCategory = cat;
       initMenu();
-    });
+    }
+
+    // 首页进入按钮
+    $('#enterBtn').addEventListener('click', () => enterMenu());
+    $('#drinkBtn').addEventListener('click', () => enterMenu('饮品'));
 
     function initMenu() {
       renderSidebar(); renderMenu(); renderCartBar();
