@@ -22,7 +22,7 @@ function validOrder(order) {
 }
 
 /**
- * 格式化企业微信通知文本
+ * 格式化订单通知文本
  */
 function formatOrder(order) {
   const lines = [
@@ -41,23 +41,23 @@ function formatOrder(order) {
 }
 
 /**
- * 发送企业微信 Webhook
+ * 发送飞书 Webhook 通知
  */
 async function sendWebhook(content) {
-  const webhookUrl = process.env.WEBHOOK_URL;
+  const webhookUrl = process.env.FEISHU_WEBHOOK_URL;
   if (!webhookUrl) return;
 
   const response = await fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      msgtype: 'text',
-      text: { content }
+      msg_type: 'text',
+      content: { text: content }
     })
   });
 
   if (!response.ok) {
-    throw new Error(`企业微信通知失败（HTTP ${response.status}）`);
+    throw new Error(`飞书通知失败（HTTP ${response.status}）`);
   }
 }
 
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       serverTime: new Date().toISOString()
     };
 
-    // 发送企业微信通知
+    // 发送飞书通知
     await sendWebhook(formatOrder(orderRecord));
 
     return res.status(200).json({ code: 0, msg: '提交成功' });
