@@ -58,8 +58,34 @@
 
 <body class="min-w-[320px] bg-ink text-tx antialiased overflow-x-hidden">
 
+  <!-- ====== 首页 ====== -->
+  <div id="homePage" class="min-h-screen flex flex-col items-center justify-center px-6 relative overflow-hidden">
+    <!-- 背景渐变 -->
+    <div class="absolute inset-0 bg-gradient-to-b from-[#0d1117] via-[#0a1628] to-[#0a0a0a]"></div>
+    <div class="absolute top-0 right-0 w-64 h-64 rounded-full bg-prime/5 blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-gold/5 blur-3xl"></div>
+    <!-- 内容 -->
+    <div class="relative z-10 text-center max-w-[360px] w-full">
+      <div class="text-6xl mb-6">🍽️</div>
+      <p class="text-[10px] pixel-text text-prime tracking-[.3em] mb-4">SWEETHEART DINER</p>
+      <h1 class="text-4xl font-bold text-tx mb-3">专属点餐</h1>
+      <p class="text-sm text-mute mb-10">属于我们两个人的小餐桌</p>
+      <button id="enterBtn" class="w-full h-16 rounded-2xl bg-card border border-white/10 hover:border-prime/30 flex items-center px-5 active:scale-[.98] transition-all duration-200 group">
+        <div class="w-10 h-10 rounded-xl bg-prime/15 flex items-center justify-center text-lg mr-4 group-hover:bg-prime/25 transition-all">🍜</div>
+        <div class="text-left flex-1">
+          <p class="text-[10px] pixel-text text-mute mb-0.5">EAT</p>
+          <p class="text-base font-bold text-tx">今天吃什么</p>
+        </div>
+        <span class="text-mute group-hover:text-prime transition-all text-xl">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ====== 菜单页 ====== -->
+  <div id="menuPage" class="hidden min-h-screen"></div>
+
   <!-- ====== 顶部标题栏 ====== -->
-  <header class="fixed inset-x-0 top-0 z-30 bg-ink/95 backdrop-blur border-b border-white/5">
+  <header style="display:none" class="fixed inset-x-0 top-0 z-30 bg-ink/95 backdrop-blur border-b border-white/5">
     <div class="max-w-[430px] mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="h-9 w-9 rounded-full bg-accent/40 flex items-center justify-center text-sm">🍽️</div>
@@ -70,7 +96,7 @@
   </header>
 
   <!-- ====== 左侧分类栏 + 右侧内容 ====== -->
-  <main class="max-w-[430px] mx-auto flex pt-14 pb-24 min-h-screen">
+  <main style="display:none" class="max-w-[430px] mx-auto flex pt-14 pb-24 min-h-screen">
 
     <!-- 左侧竖栏 -->
     <nav id="sidebar" class="w-[90px] shrink-0 border-r border-white/5 pt-4 flex flex-col gap-1 px-2"></nav>
@@ -89,7 +115,7 @@
   </main>
 
   <!-- ====== 底部固定栏 ====== -->
-  <div id="cartBar" class="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] bg-ink/95 backdrop-blur border-t border-white/5"></div>
+  <div id="cartBar" style="display:none" class="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] bg-ink/95 backdrop-blur border-t border-white/5"></div>
 
   <!-- ====== 随机弹窗 ====== -->
   <div id="randomModal" class="fixed inset-0 z-50 hidden bg-ink/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -158,16 +184,17 @@
   <!-- ====== 脚本 ====== -->
   <script>
     const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
 
     const menuList = [
-      { id:'guobaorou',  category:'东北菜', name:'锅包肉',       price:0, desc:'酸甜酥脆，咬一口就是家乡味。',    img:'./images/guobaorou.svg',  ingredients:'精选里脊、米醋、白糖、胡萝卜丝与葱姜。',              detail:'外酥里嫩的经典东北菜，酸甜口感像我们第一次约会时的心情。',            nutrition:'碳水 42% · 蛋白质 28% · 脂肪 30%', taste:5.0, selectedCount:28, steps:['里脊肉切薄片，加料酒、盐腌制15分钟。','土豆淀粉加水调成糊，肉片裹糊。','油温七成热下锅炸至金黄捞出。','另起锅，糖醋汁翻炒至浓稠，下肉片快速翻匀出锅。'], tips:'糖醋比例 3:2 最佳，炸两次更酥脆。' },
-      { id:'mapotofu',   category:'川菜',   name:'麻婆豆腐',     price:0, desc:'麻辣鲜香，软嫩豆腐超下饭。',      img:'./images/mapotofu.svg',   ingredients:'嫩豆腐、牛肉末、郫县豆瓣、花椒与小葱。',                 detail:'一勺热乎乎的豆腐，带来刚刚好的麻辣和满满的满足感。',              nutrition:'碳水 18% · 蛋白质 34% · 脂肪 48%', taste:4.8, selectedCount:35, steps:['嫩豆腐切2cm方块，焯水去腥。','牛肉末炒至变色，加郫县豆瓣炒出红油。','加高汤煮沸，下豆腐小火煮5分钟。','勾芡收汁，撒花椒面和小葱出锅。'], tips:'豆腐不要翻动太猛，轻轻推即可保持完整。' },
-      { id:'donganji',   category:'湘菜',   name:'东安子鸡',     price:0, desc:'酸辣开胃，鲜嫩多汁的湘味。',      img:'./images/donganji.svg',   ingredients:'嫩鸡、米醋、泡椒、鲜姜与香葱。',                         detail:'酸辣鲜香的湖南风味，适合和最爱的人一起分享。',                    nutrition:'碳水 12% · 蛋白质 51% · 脂肪 37%', taste:4.7, selectedCount:19, steps:['鸡肉切块，冷水下锅加姜片料酒焯水。','锅中热油，下姜丝、泡椒爆香。','加入鸡块翻炒，倒入米醋和少许糖。','小火焖煮15分钟至入味，出锅撒葱丝。'], tips:'用嫩鸡腿肉口感最佳，醋量按个人喜好调整。' },
-      { id:'tangcuyu',   category:'鲁菜',   name:'糖醋鲤鱼',     price:0, desc:'外焦里嫩，甜蜜得像一句告白。',    img:'./images/tangcuyu.svg',   ingredients:'鲜活鲤鱼、陈醋、冰糖、番茄与松子。',                       detail:'造型漂亮、滋味甜蜜，愿我们的日子年年有余。',                      nutrition:'碳水 35% · 蛋白质 39% · 脂肪 26%', taste:4.9, selectedCount:22, steps:['鲤鱼处理干净，两面剞花刀。','鱼身抹淀粉，七八成油温炸至定型金黄。','另起锅，冰糖炒化加陈醋番茄酱调汁。','将糖醋汁浇在鱼身上，撒松子装饰。'], tips:'炸鱼时油温要高，快速定型外酥里嫩。' },
-      { id:'peachtea',   category:'饮品',   name:'蜜桃乌龙',     price:0, desc:'清甜茶香，给今天加一点粉色。',    img:'./images/peachtea.svg',   ingredients:'水蜜桃、乌龙茶、蜂蜜与薄荷。',                             detail:'清爽不腻的蜜桃香气，适合饭后一起碰杯。',                          nutrition:'碳水 88% · 蛋白质 2% · 脂肪 10%', taste:4.6, selectedCount:41, steps:['水蜜桃去皮切小块。','乌龙茶叶用85°C热水冲泡3分钟。','杯中放入桃肉和冰块，倒入茶汤。','加蜂蜜搅拌，点缀薄荷叶。'], tips:'冷藏2小时后风味更佳，夏天加冰超爽。' },
-      { id:'tangyuan',   category:'甜品',   name:'桂花酒酿圆子', price:0, desc:'软糯香甜，饭后的一点小浪漫。',    img:'./images/tangyuan.svg',   ingredients:'糯米圆子、酒酿、桂花与红糖。',                             detail:'一碗热乎乎的小圆子，愿我们团团圆圆、甜甜蜜蜜。',                  nutrition:'碳水 76% · 蛋白质 8% · 脂肪 16%', taste:5.0, selectedCount:33, steps:['糯米粉加水揉成面团，搓成小圆子。','水烧开下圆子，煮至浮起。','加入酒酿和红糖再煮2分钟。','盛碗撒干桂花。'], tips:'圆子搓小一点更Q弹，红糖量按甜度喜好。' },
-      { id:'danchaofan', category:'主食',   name:'扬州炒饭',     price:0, desc:'粒粒分明，简单却永远吃不腻。',    img:'./images/danchaofan.svg', ingredients:'隔夜米饭、鸡蛋、虾仁、玉米与青豆。',                     detail:'一份认真炒好的主食，把平凡的日子也变得闪闪发光。',                nutrition:'碳水 58% · 蛋白质 22% · 脂肪 20%', taste:4.5, selectedCount:26, steps:['鸡蛋打散炒熟盛出备用。','锅中热油，炒虾仁和玉米青豆。','加入隔夜米饭大火翻炒至粒粒分明。','倒入鸡蛋碎，加盐和葱花翻匀出锅。'], tips:'隔夜饭效果最好，大火快炒是关键。' },
-      { id:'xiaolongbao',category:'主食',   name:'鲜肉小笼包',   price:0, desc:'皮薄汁多，小心烫，幸福也会烫。',  img:'./images/xiaolongbao.svg',ingredients:'面粉、鲜猪肉、皮冻、葱姜水。',                           detail:'轻轻提起，先开窗再喝汤，是早餐桌上的温柔仪式。',                  nutrition:'碳水 45% · 蛋白质 25% · 脂肪 30%', taste:4.9, selectedCount:38, steps:['面粉加温水揉成光滑面团醒30分钟。','猪肉剁碎加皮冻、葱姜水、生抽调馅。','面团擀成薄皮，包入馅料捏褶。','上蒸笼大火蒸8分钟。'], tips:'皮冻是汤汁的关键，提前一天准备。' }
+      { id:'guobaorou',  category:'东北菜', name:'锅包肉',       price:0, desc:'酸甜酥脆，咬一口就是家乡味。',    img:'./images/guobaorou.svg',  ingredients:'精选里脊、米醋、白糖、胡萝卜丝与葱姜。',              detail:'外酥里嫩的经典东北菜，酸甜口感像我们第一次约会时的心情。',            nutrition:'碳水 42% · 蛋白质 28% · 脂肪 30%', taste:5.0, selectedCount:0, steps:['里脊肉切薄片，加料酒、盐腌制15分钟。','土豆淀粉加水调成糊，肉片裹糊。','油温七成热下锅炸至金黄捞出。','另起锅，糖醋汁翻炒至浓稠，下肉片快速翻匀出锅。'], tips:'糖醋比例 3:2 最佳，炸两次更酥脆。' },
+      { id:'mapotofu',   category:'川菜',   name:'麻婆豆腐',     price:0, desc:'麻辣鲜香，软嫩豆腐超下饭。',      img:'./images/mapotofu.svg',   ingredients:'嫩豆腐、牛肉末、郫县豆瓣、花椒与小葱。',                 detail:'一勺热乎乎的豆腐，带来刚刚好的麻辣和满满的满足感。',              nutrition:'碳水 18% · 蛋白质 34% · 脂肪 48%', taste:4.8, selectedCount:0, steps:['嫩豆腐切2cm方块，焯水去腥。','牛肉末炒至变色，加郫县豆瓣炒出红油。','加高汤煮沸，下豆腐小火煮5分钟。','勾芡收汁，撒花椒面和小葱出锅。'], tips:'豆腐不要翻动太猛，轻轻推即可保持完整。' },
+      { id:'donganji',   category:'湘菜',   name:'东安子鸡',     price:0, desc:'酸辣开胃，鲜嫩多汁的湘味。',      img:'./images/donganji.svg',   ingredients:'嫩鸡、米醋、泡椒、鲜姜与香葱。',                         detail:'酸辣鲜香的湖南风味，适合和最爱的人一起分享。',                    nutrition:'碳水 12% · 蛋白质 51% · 脂肪 37%', taste:4.7, selectedCount:0, steps:['鸡肉切块，冷水下锅加姜片料酒焯水。','锅中热油，下姜丝、泡椒爆香。','加入鸡块翻炒，倒入米醋和少许糖。','小火焖煮15分钟至入味，出锅撒葱丝。'], tips:'用嫩鸡腿肉口感最佳，醋量按个人喜好调整。' },
+      { id:'tangcuyu',   category:'鲁菜',   name:'糖醋鲤鱼',     price:0, desc:'外焦里嫩，甜蜜得像一句告白。',    img:'./images/tangcuyu.svg',   ingredients:'鲜活鲤鱼、陈醋、冰糖、番茄与松子。',                       detail:'造型漂亮、滋味甜蜜，愿我们的日子年年有余。',                      nutrition:'碳水 35% · 蛋白质 39% · 脂肪 26%', taste:4.9, selectedCount:0, steps:['鲤鱼处理干净，两面剞花刀。','鱼身抹淀粉，七八成油温炸至定型金黄。','另起锅，冰糖炒化加陈醋番茄酱调汁。','将糖醋汁浇在鱼身上，撒松子装饰。'], tips:'炸鱼时油温要高，快速定型外酥里嫩。' },
+      { id:'peachtea',   category:'饮品',   name:'蜜桃乌龙',     price:0, desc:'清甜茶香，给今天加一点粉色。',    img:'./images/peachtea.svg',   ingredients:'水蜜桃、乌龙茶、蜂蜜与薄荷。',                             detail:'清爽不腻的蜜桃香气，适合饭后一起碰杯。',                          nutrition:'碳水 88% · 蛋白质 2% · 脂肪 10%', taste:4.6, selectedCount:0, steps:['水蜜桃去皮切小块。','乌龙茶叶用85°C热水冲泡3分钟。','杯中放入桃肉和冰块，倒入茶汤。','加蜂蜜搅拌，点缀薄荷叶。'], tips:'冷藏2小时后风味更佳，夏天加冰超爽。' },
+      { id:'tangyuan',   category:'甜品',   name:'桂花酒酿圆子', price:0, desc:'软糯香甜，饭后的一点小浪漫。',    img:'./images/tangyuan.svg',   ingredients:'糯米圆子、酒酿、桂花与红糖。',                             detail:'一碗热乎乎的小圆子，愿我们团团圆圆、甜甜蜜蜜。',                  nutrition:'碳水 76% · 蛋白质 8% · 脂肪 16%', taste:5.0, selectedCount:0, steps:['糯米粉加水揉成面团，搓成小圆子。','水烧开下圆子，煮至浮起。','加入酒酿和红糖再煮2分钟。','盛碗撒干桂花。'], tips:'圆子搓小一点更Q弹，红糖量按甜度喜好。' },
+      { id:'danchaofan', category:'主食',   name:'扬州炒饭',     price:0, desc:'粒粒分明，简单却永远吃不腻。',    img:'./images/danchaofan.svg', ingredients:'隔夜米饭、鸡蛋、虾仁、玉米与青豆。',                     detail:'一份认真炒好的主食，把平凡的日子也变得闪闪发光。',                nutrition:'碳水 58% · 蛋白质 22% · 脂肪 20%', taste:4.5, selectedCount:0, steps:['鸡蛋打散炒熟盛出备用。','锅中热油，炒虾仁和玉米青豆。','加入隔夜米饭大火翻炒至粒粒分明。','倒入鸡蛋碎，加盐和葱花翻匀出锅。'], tips:'隔夜饭效果最好，大火快炒是关键。' },
+      { id:'xiaolongbao',category:'主食',   name:'鲜肉小笼包',   price:0, desc:'皮薄汁多，小心烫，幸福也会烫。',  img:'./images/xiaolongbao.svg',ingredients:'面粉、鲜猪肉、皮冻、葱姜水。',                           detail:'轻轻提起，先开窗再喝汤，是早餐桌上的温柔仪式。',                  nutrition:'碳水 45% · 蛋白质 25% · 脂肪 30%', taste:4.9, selectedCount:0, steps:['面粉加温水揉成光滑面团醒30分钟。','猪肉剁碎加皮冻、葱姜水、生抽调馅。','面团擀成薄皮，包入馅料捏褶。','上蒸笼大火蒸8分钟。'], tips:'皮冻是汤汁的关键，提前一天准备。' }
     ];
 
     const categories = ['东北菜','川菜','湘菜','鲁菜','饮品','甜品','主食'];
@@ -299,27 +326,23 @@
             <p class="text-center text-lg font-bold text-tx mt-3">${dish.name}</p>
             <p class="text-center text-xs text-mute mt-1">${dish.desc}</p>
             <div class="flex gap-3 mt-6">
-              <button id="rerollRandom" class="flex-1 h-12 rounded-2xl bg-white/5 border border-white/10 text-tx text-sm font-bold active:scale-95 transition-all duration-150">
-                换一个
-              </button>
-              <button id="confirmRandom" class="flex-1 h-12 rounded-2xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150">
-                就这个！
-              </button>
+              <button id="rerollRandom" class="flex-1 h-12 rounded-2xl bg-white/5 border border-white/10 text-tx text-sm font-bold active:scale-95 transition-all duration-150">换一个</button>
+              <button id="confirmRandom" class="flex-1 h-12 rounded-2xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150">就这个！</button>
             </div>
           </div>`;
-        $('#closeRandom').addEventListener('click', ()=>$('#randomModal').classList.add('hidden'));
+        $('#closeRandom').addEventListener('click', ()=>$('#randomModal').style.display='none');
         $('#rerollRandom').addEventListener('click', ()=>{
           dish = dishes[Math.floor(Math.random()*dishes.length)];
           render();
         });
         $('#confirmRandom').addEventListener('click', ()=>{
           changeQuantity(dish.id, 1);
-          $('#randomModal').classList.add('hidden');
+          $('#randomModal').style.display='none';
           showToast('🎲 今天吃「' + dish.name + '」吧！');
         });
       }
       render();
-      $('#randomModal').classList.remove('hidden');
+      $('#randomModal').style.display = 'flex';
     }
 
     /* ---- 购物车弹窗 ---- */
@@ -484,7 +507,37 @@
     $('#ordersContent').addEventListener('click',e=>{ const btn=e.target.closest('[data-del]'); if(btn) deleteOrder(btn.dataset.del); });
 
     // 启动
-    renderSidebar(); renderMenu(); renderCartBar();
+    // 首页进入按钮
+    $('#enterBtn').addEventListener('click', () => {
+      $('#homePage').style.display = 'none';
+      document.querySelector('header').style.display = '';
+      document.querySelector('main').style.display = '';
+      $('#cartBar').style.display = '';
+      initMenu();
+    });
+
+    function initMenu() {
+      renderSidebar(); renderMenu(); renderCartBar();
+      // 从历史订单统计被选次数
+      fetchOrderCounts();
+    }
+
+    async function fetchOrderCounts() {
+      try {
+        const res = await fetch('/api/get-orders?type=all');
+        const data = await res.json();
+        const orders = data.orders || [];
+        const counts = {};
+        orders.forEach(o => (o.items||[]).forEach(it => {
+          if (it.id) counts[it.id] = (counts[it.id]||0) + (it.quantity||0);
+        }));
+        menuList.forEach(d => d.selectedCount = counts[d.id] || 0);
+        // 菜单已渲染则重绘
+        if (document.querySelector('main')?.style?.display !== 'none') {
+          renderMenu();
+        }
+      } catch(e) {}
+    }
   </script>
 </body>
 </html>
