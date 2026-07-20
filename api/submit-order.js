@@ -41,23 +41,59 @@ function formatOrder(order) {
 }
 
 /**
- * 发送飞书 Webhook 通知
+ * 获取飞书 tenant_access_token（带缓存）
  */
-async function sendWebhook(content) {
-  const webhookUrl = process.env.FEISHU_WEBHOOK_URL;
-  if (!webhookUrl) return;
+let cachedToken = null;
+let tokenExpiresAt = 0;
 
-  const response = await fetch(webhookUrl, {
+async function getTenantToken() {
+  if (cachedToken && Date.now() < tokenExpiresAt) {
+    return cachedToken;
+  }
+  const res = await fetch('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      msg_type: 'text',
-      content: { text: content }
+      app_id: process.env.FEISHU_APP_ID,
+      app_secret: process.env.FEISHU_APP_SECRET
     })
   });
+  const data = await res.json();
+  if (data.code !== 0) {
+    throw new Error(`飞书鉴权失败：${data.msg}`);
+  }
+  cachedToken = data.tenant_access_token;
+  tokenExpiresAt = Date.now() + (data.expire - 60) * 1000; // 提前 60 秒刷新
+  return cachedToken;
+}
 
-  if (!response.ok) {
-    throw new Error(`飞书通知失败（HTTP ${response.status}）`);
+/**
+ * 通过飞书 API 发送消息到指定用户
+ */
+async function sendFeishuMessage(content) {
+  const appId = process.env.FEISHU_APP_ID;
+  const receiveId = process.env.FEISHU_RECEIVE_ID;
+  if (!appId || !receiveId) return;
+
+  const token = await getTenantToken();
+  const res = await fetch(
+    `https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        receive_id: receiveId,
+        msg_type: 'text',
+        content: JSON.stringify({ text: content })
+      })
+    }
+  );
+  const data = await res.json();
+  if (data.code !== 0) {
+    throw new Error(`飞书消息发送失败：${data.msg}`);
   }
 }
 
@@ -85,7 +121,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ code: -1, msg: '订单数据格式不正确' });
     }
 
-    // 使用前端生成的可读订单号，如 OD-20260718-143025-A3F
     const orderId = order.orderId || `order:${Date.now()}`;
     const orderRecord = {
       ...order,
@@ -93,8 +128,7 @@ export default async function handler(req, res) {
       serverTime: new Date().toISOString()
     };
 
-    // 发送飞书通知
-    await sendWebhook(formatOrder(orderRecord));
+    await sendFeishuMessage(formatOrder(orderRecord));
 
     return res.status(200).json({ code: 0, msg: '提交成功' });
   } catch (error) {
