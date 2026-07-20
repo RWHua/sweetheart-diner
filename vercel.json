@@ -5,6 +5,9 @@
     },
     "api/feishu-bot.js": {
       "maxDuration": 15
+    },
+    "api/get-orders.js": {
+      "maxDuration": 10
     }
   }
 }
