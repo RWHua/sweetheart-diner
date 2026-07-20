@@ -261,6 +261,7 @@
     }
 
     function starRating(n) {
+      if (n >= 5.0) return '<span class="text-gold text-xs font-bold">★ 夯爆了！</span>';
       const full = Math.floor(n);
       const half = n - full >= 0.5;
       let s = '';
