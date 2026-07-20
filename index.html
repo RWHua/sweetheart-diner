@@ -91,6 +91,11 @@
   <!-- ====== 底部固定栏 ====== -->
   <div id="cartBar" class="fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] bg-ink/95 backdrop-blur border-t border-white/5"></div>
 
+  <!-- ====== 随机弹窗 ====== -->
+  <div id="randomModal" class="fixed inset-0 z-50 hidden bg-ink/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div id="randomInner" class="animate-modal-in w-full max-w-[380px] bg-card border border-white/10 rounded-[2rem] overflow-hidden"></div>
+  </div>
+
   <!-- ====== 菜品详情弹窗 ====== -->
   <div id="dishModal" class="fixed inset-0 z-50 hidden bg-ink/80 backdrop-blur-sm p-0" role="dialog" aria-modal="true">
     <div class="animate-modal-in mx-auto max-w-[430px] h-full bg-panel overflow-y-auto"></div>
@@ -196,10 +201,12 @@
     }
 
     /* ---- 菜品卡片 ---- */
-    function dishImage(dish) {
-      return `<div class="w-[120px] h-[120px] shrink-0 rounded-2xl overflow-hidden bg-white/5 border border-white/5 p-1">
-        <img src="${dish.img}" alt="${dish.name}" class="w-full h-full object-cover rounded-xl"
-          onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect width=%22200%22 height=%22200%22 fill=%22%231a1a1a%22/%3E%3Ctext x=%22100%22 y=%22115%22 text-anchor=%22middle%22 font-size=%2256%22%3E🍲%3C/text%3E%3C/svg%3E'"></div>`;
+    function dishImage(dish, cls) {
+      const sz = cls || 'dish-img w-full h-full';
+      return `<div class="relative aspect-square rounded-2xl overflow-hidden bg-[#111] border-2 border-white/10 p-2">
+        <div class="w-full h-full rounded-xl overflow-hidden bg-[#1a1a1a]">
+          <img src="${dish.img}" alt="${dish.name}" class="w-full h-full object-cover"
+            onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 400%22%3E%3Crect width=%22400%22 height=%22400%22 fill=%22%231a1a1a%22/%3E%3Ctext x=%22200%22 y=%22230%22 text-anchor=%22middle%22 font-size=%22120%22%3E🍽%3C/text%3E%3C/svg%3E'"></div></div>`;
     }
 
     function starRating(n) {
@@ -217,7 +224,7 @@
 
       $('#menuList').innerHTML = dishes.map(dish => `
         <article class="flex gap-3 rounded-2xl bg-card border border-white/5 p-3 hover:border-white/10 transition-all duration-200">
-          <button class="shrink-0 active:scale-95 transition-all duration-150" data-detail="${dish.id}">
+          <button class="shrink-0 w-[130px] active:scale-95 transition-all duration-150" data-detail="${dish.id}">
             ${dishImage(dish)}
           </button>
           <div class="flex min-w-0 flex-1 flex-col justify-between py-1">
@@ -274,9 +281,45 @@
     function randomPick() {
       const dishes = menuList.filter(d => d.category === activeCategory);
       if (!dishes.length) return;
-      const dish = dishes[Math.floor(Math.random()*dishes.length)];
-      changeQuantity(dish.id, 1);
-      showToast('🎲 今天吃「' + dish.name + '」吧！');
+      let dish = dishes[Math.floor(Math.random()*dishes.length)];
+
+      function render() {
+        $('#randomInner').innerHTML = `
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <p class="text-[10px] pixel-text text-mute uppercase mb-1">Random</p>
+                <p class="text-xl font-bold text-tx">就它了？</p>
+              </div>
+              <button id="closeRandom" class="text-2xl text-mute hover:text-tx px-2 active:scale-95 transition-all">×</button>
+            </div>
+            <div class="flex justify-center py-4">
+              <div class="w-[220px]">${dishImage(dish)}</div>
+            </div>
+            <p class="text-center text-lg font-bold text-tx mt-3">${dish.name}</p>
+            <p class="text-center text-xs text-mute mt-1">${dish.desc}</p>
+            <div class="flex gap-3 mt-6">
+              <button id="rerollRandom" class="flex-1 h-12 rounded-2xl bg-white/5 border border-white/10 text-tx text-sm font-bold active:scale-95 transition-all duration-150">
+                换一个
+              </button>
+              <button id="confirmRandom" class="flex-1 h-12 rounded-2xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150">
+                就这个！
+              </button>
+            </div>
+          </div>`;
+        $('#closeRandom').addEventListener('click', ()=>$('#randomModal').classList.add('hidden'));
+        $('#rerollRandom').addEventListener('click', ()=>{
+          dish = dishes[Math.floor(Math.random()*dishes.length)];
+          render();
+        });
+        $('#confirmRandom').addEventListener('click', ()=>{
+          changeQuantity(dish.id, 1);
+          $('#randomModal').classList.add('hidden');
+          showToast('🎲 今天吃「' + dish.name + '」吧！');
+        });
+      }
+      render();
+      $('#randomModal').classList.remove('hidden');
     }
 
     /* ---- 购物车弹窗 ---- */
@@ -309,7 +352,9 @@
       const el = $('#dishModal').querySelector('div');
       el.innerHTML = `
         <div class="relative">
-          <div class="aspect-square bg-panel overflow-hidden border-b border-white/5">${dishImage(dish).replace('w-[120px] h-[120px]','w-full h-full')}</div>
+          <div class="aspect-square bg-panel overflow-hidden border-b border-white/5 p-6 pt-10 pb-6 flex items-center justify-center">
+            <div class="w-full max-w-[300px]">${dishImage(dish)}</div>
+          </div>
           <button id="closeDish" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-ink/70 text-tx text-xl flex items-center justify-center active:scale-95 transition-all">×</button>
         </div>
         <div class="p-5">
