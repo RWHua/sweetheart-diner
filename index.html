@@ -311,7 +311,7 @@
     let randomDish = null;
 
     window.rerollRandom = function() {
-      const dishes = menuList.filter(d => d.category === activeCategory);
+      const dishes = menuList;
       if (!dishes.length) return;
       randomDish = dishes[Math.floor(Math.random()*dishes.length)];
       renderRandomModal();
