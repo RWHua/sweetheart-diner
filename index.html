@@ -306,21 +306,27 @@
     const categories = ['东北菜','津菜','川菜','湘菜','鲁菜','饮品','甜品','主食'];
     let activeCategory = categories[0];
     let cart = JSON.parse(localStorage.getItem('sweetheart-cart') || '{}');
-    let cartOptions = JSON.parse(localStorage.getItem('sweetheart-cart-options') || '{}');
+    // 自动迁移：检测旧格式数据（有options的菜用了旧key），清掉重新来
+    if (Object.keys(cart).some(k => !k.includes('::') && menuList.find(d => d.id === k)?.options)) {
+      cart = {};
+      localStorage.removeItem('sweetheart-cart');
+      localStorage.removeItem('sweetheart-cart-options');
+    }
+    const makeKey = (id, opt) => opt ? `${id}::${opt}` : id;
+    const dishTotal = (id) => Object.entries(cart).filter(([k])=>k===id||k.startsWith(id+'::')).reduce((s,[,q])=>s+q,0);
 
     const money = v => '¥' + v.toFixed(0);
     const getDish = id => menuList.find(d => d.id === id);
     const saveCart = () => {
       localStorage.setItem('sweetheart-cart', JSON.stringify(cart));
-      localStorage.setItem('sweetheart-cart-options', JSON.stringify(cartOptions));
     };
-    const cartEntries = () => Object.entries(cart).filter(([,q])=>q>0).map(([id,q])=>({dish:getDish(id),quantity:q})).filter(({dish})=>dish);
+    const cartEntries = () => Object.entries(cart).filter(([,q])=>q>0).map(([key,q])=>{const [id,opt]=key.split('::');return {dish:getDish(id),quantity:q,option:opt||'',cartKey:key}}).filter(({dish})=>dish);
     const cartCount = () => cartEntries().reduce((s,e)=>s+e.quantity,0);
     const cartTotal = () => cartEntries().reduce((s,e)=>s+e.dish.price*e.quantity,0);
 
-    function changeQuantity(id, delta) {
-      cart[id] = Math.max(0, (cart[id]||0)+delta);
-      if (!cart[id]) delete cart[id];
+    function changeQuantity(key, delta) {
+      cart[key] = Math.max(0, (cart[key]||0)+delta);
+      if (!cart[key]) delete cart[key];
       saveCart(); renderMenu(); renderCartBar(); renderCartModal();
     }
 
@@ -382,14 +388,14 @@
           <div class="flex items-center gap-2 mt-3">
             <button class="flex-1 h-11 rounded-xl bg-prime text-ink text-sm font-bold active:scale-95 transition-all duration-150" data-want="${dish.id}">${dish.category==='饮品'?'我要喝这个！':'我要吃这个！'}</button>
             <div class="flex items-center gap-1 shrink-0">
-              <button class="w-8 h-8 rounded-full bg-white/5 text-mute text-sm active:scale-95 ${cart[dish.id]?'':'invisible'}" data-minus="${dish.id}">−</button>
-              <span class="min-w-[16px] text-center text-xs font-bold ${cart[dish.id]?'':'hidden'}">${cart[dish.id]||0}</span>
+              <button class="w-8 h-8 rounded-full bg-white/5 text-mute text-sm active:scale-95 ${dishTotal(dish.id)?'':'invisible'}" data-minus="${dish.id}">−</button>
+              <span class="min-w-[16px] text-center text-xs font-bold ${dishTotal(dish.id)?'':'hidden'}">${dishTotal(dish.id)||0}</span>
               <button class="w-8 h-8 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${dish.id}">+</button>
             </div>
           </div>
         </article>`).join('');
 
-      document.querySelectorAll('[data-plus]').forEach(b => b.addEventListener('click', ()=>changeQuantity(b.dataset.plus,1)));
+      document.querySelectorAll('[data-plus]').forEach(b => b.addEventListener('click', ()=>{const dish=getDish(b.dataset.plus);if(dish&&dish.options){showOptionPicker(dish)}else{changeQuantity(b.dataset.plus,1)}}));
       document.querySelectorAll('[data-minus]').forEach(b => b.addEventListener('click', ()=>changeQuantity(b.dataset.minus,-1)));
       document.querySelectorAll('[data-detail]').forEach(b => b.addEventListener('click', ()=>openDish(b.dataset.detail)));
       document.querySelectorAll('[data-want]').forEach(b => b.addEventListener('click', ()=>{
@@ -481,8 +487,7 @@
       $('#optionModal').style.display = 'flex';
       document.querySelectorAll('#optionInner [data-opt]').forEach(b =>
         b.addEventListener('click', () => {
-          cartOptions[dish.id] = b.dataset.opt;
-          changeQuantity(dish.id, 1);
+          changeQuantity(makeKey(dish.id, b.dataset.opt), 1);
           $('#optionModal').style.display = 'none';
           showToast('已加入 · ' + dish.name + '（' + b.dataset.opt + '）');
         })
@@ -494,17 +499,17 @@
     function renderCartModal() {
       const entries = cartEntries();
       $('#emptyCart').classList.toggle('hidden', entries.length>0);
-      $('#cartItems').innerHTML = entries.map(({dish,quantity})=>`
+      $('#cartItems').innerHTML = entries.map(({dish,quantity,option,cartKey})=>`
         <div class="flex items-center gap-3 rounded-xl bg-card border border-white/5 p-3">
           <div class="w-14 h-14 shrink-0 rounded-xl overflow-hidden bg-white/5">${dishImage(dish)}</div>
           <div class="min-w-0 flex-1">
-            <h3 class="truncate font-bold text-tx text-sm">${dish.name}${cartOptions[dish.id] ? ' <span class="text-gold text-xs">'+cartOptions[dish.id]+'</span>' : ''}</h3>
+            <h3 class="truncate font-bold text-tx text-sm">${dish.name}${option ? ' <span class="text-gold text-xs">'+option+'</span>' : ''}</h3>
             <p class="text-xs text-prime">${money(dish.price)}</p>
           </div>
           <div class="flex items-center gap-1">
-            <button class="w-7 h-7 rounded-full bg-white/5 text-mute text-sm active:scale-95" data-minus="${dish.id}">−</button>
+            <button class="w-7 h-7 rounded-full bg-white/5 text-mute text-sm active:scale-95" data-minus="${cartKey}">−</button>
             <span class="min-w-[14px] text-center text-xs font-bold">${quantity}</span>
-            <button class="w-7 h-7 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${dish.id}">+</button>
+            <button class="w-7 h-7 rounded-full bg-prime/30 text-prime text-sm active:scale-95" data-plus="${cartKey}">+</button>
           </div>
         </div>`).join('');
       $('#cartTotal').textContent = money(cartTotal());
@@ -555,7 +560,7 @@
             <p class="text-sm text-warm"><span class="font-bold">AB提示：</span>${dish.tips}</p>
           </div>`:''}
           <button id="detailAdd" class="mt-6 w-full h-14 rounded-2xl bg-prime text-ink text-base font-bold active:scale-95 transition-all duration-150">
-            ${dish.category==='饮品'?'我要喝这个！':'我要吃这个！'} · ${cart[dish.id]||0} 份
+            ${dish.category==='饮品'?'我要喝这个！':'我要吃这个！'} · ${dishTotal(dish.id)||0} 份
           </button>
         </div>`;
       $('#dishModal').classList.remove('hidden');
@@ -566,7 +571,7 @@
           showOptionPicker(dish);
         } else {
           changeQuantity(dish.id,1);
-          $('#detailAdd').textContent = '我要吃这个！ · '+(cart[dish.id]||0)+' 份';
+          $('#detailAdd').textContent = '我要吃这个！ · '+(dishTotal(dish.id)||0)+' 份';
         }
       });
     }
