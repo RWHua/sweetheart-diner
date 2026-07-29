@@ -593,7 +593,7 @@
 
     function orderText() {
       const note = $('#orderNote').value.trim();
-      return ['【专属点餐】',...cartEntries().map(({dish,q})=>dish.name+' × '+q),'合计：'+money(cartTotal()),note?'备注：'+note:''].filter(Boolean).join('\n');
+      return ['【专属点餐】',...cartEntries().map(({dish,quantity,option})=>dish.name+(option?'【'+option+'】':'')+' × '+quantity),'合计：'+money(cartTotal()),note?'备注：'+note:''].filter(Boolean).join('\n');
     }
 
     async function submitOrder() {
