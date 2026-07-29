@@ -440,9 +440,13 @@
 
     window.confirmRandom = function() {
       if (!randomDish) return;
-      changeQuantity(randomDish.id, 1);
       $('#randomModal').style.display = 'none';
-      showToast('🎲 今天吃「' + randomDish.name + '」吧！');
+      if (randomDish.options) {
+        showOptionPicker(randomDish);
+      } else {
+        changeQuantity(randomDish.id, 1);
+        showToast('🎲 今天吃「' + randomDish.name + '」吧！');
+      }
     };
 
     window.closeRandom = function() {

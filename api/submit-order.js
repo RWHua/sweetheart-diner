@@ -15,7 +15,8 @@ function validOrder(order) {
   return order.items.every(item =>
     item && typeof item.name === 'string' && item.name.trim().length > 0 &&
     Number.isInteger(item.quantity) && item.quantity > 0 && item.quantity <= 99 &&
-    typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0
+    typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
+    (item.option === undefined || item.option === '' || typeof item.option === 'string')
   );
 }
 
