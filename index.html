@@ -600,7 +600,7 @@
       const entries = cartEntries(); if (!entries.length) return;
       const btn = $('#submitOrder'); btn.disabled = true; btn.textContent = '正在送出爱心…';
       const orderId = genOrderId();
-      const payload = { orderId, items: entries.map(({dish,quantity})=>({id:dish.id,name:dish.name,price:dish.price,quantity})), total: cartTotal(), note: $('#orderNote').value.trim(), clientTime: new Date().toISOString() };
+      const payload = { orderId, items: entries.map(({dish,quantity,option})=>({id:dish.id,name:dish.name,price:dish.price,quantity,option:option||''})), total: cartTotal(), note: $('#orderNote').value.trim(), clientTime: new Date().toISOString() };
       try {
         const res = await fetch('/api/submit-order', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
         const data = await res.json();

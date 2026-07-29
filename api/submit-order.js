@@ -28,7 +28,7 @@ function formatOrder(order) {
     `订单号：${order.orderId}`,
     `下单时间：${order.clientTime || new Date().toISOString()}`,
     '',
-    ...order.items.map(item => `· ${item.name} × ${item.quantity}（¥${(item.price * item.quantity).toFixed(0)}）`),
+    ...order.items.map(item => `· ${item.name}${item.option ? '【'+item.option+'】' : ''} × ${item.quantity}（¥${(item.price * item.quantity).toFixed(0)}）`),
     '',
     `合计：¥${order.total.toFixed(0)}`
   ];
