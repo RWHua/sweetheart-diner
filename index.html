@@ -174,8 +174,12 @@
   <header style="display:none" class="fixed inset-x-0 top-0 z-30 bg-ink/95 backdrop-blur border-b border-white/5">
     <div class="max-w-[430px] mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="homeBtn" class="active:scale-95 text-xl transition-all duration-150">🏠</button>
-        <div class="h-9 w-9 rounded-full bg-accent/40 flex items-center justify-center text-sm">🍽️</div>
+        <button id="homeBtn" class="active:scale-95 transition-all duration-150">
+          <svg width="22" height="20" viewBox="0 0 22 20" fill="none" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 10 11 1l10 9"/>
+            <path d="M3 8v11h6v-6h4v6h6V8"/>
+          </svg>
+        </button>
         <h1 class="pixel-text text-xs text-prime tracking-wider">专属点餐</h1>
       </div>
       <button id="ordersBtn" class="active:scale-95 text-mute hover:text-tx text-xl transition-all duration-150">📋</button>
