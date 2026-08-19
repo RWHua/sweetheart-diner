@@ -111,6 +111,15 @@
     </div>
   </div>
 
+  <!-- ==================== AI 解读弹层 ==================== -->
+  <div id="readWrap" class="fixed inset-0 z-50 hidden">
+    <div id="readMask" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div id="readSheet" class="absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[430px] overflow-y-auto rounded-t-[2rem] border-t border-gold/30 bg-ink2 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5" style="touch-action: pan-y;">
+      <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-gold/30"></div>
+      <div id="readBody"></div>
+    </div>
+  </div>
+
   <script>
     /* ==================== 牌组数据（22 张大阿尔克那） ==================== */
     const DECK = [
@@ -380,9 +389,15 @@
     }
 
     /* ==================== 结果面板 ==================== */
+    let lastCards = [];          // 最近一次抽取的牌面数据（供 AI 解读）
+
     function renderResult(isReplay) {
       hint.textContent = '';
       const labels = mode === 'trio' ? ['过去', '现在', '未来'] : ['今日牌面'];
+      lastCards = picked.map((p, k) => {
+        const c = DECK[p.idx];
+        return { cn: c.cn, en: c.en, reversed: p.reversed, kw: c.kw, up: c.up, rev: c.rev, position: mode === 'trio' ? labels[k] : '' };
+      });
 
       $('#sheetBody').innerHTML = `
         <div class="space-y-6">
@@ -408,6 +423,7 @@
           }).join('')}
         </div>
         <div class="mt-7 space-y-3">
+          <button id="btnInterpret" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">🔮 解读牌意</button>
           ${mode === 'trio' ? '<button id="btnAgain" class="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3.5 text-sm tracking-[.2em] text-goldl transition active:scale-95">再抽一次</button>' : ''}
           <a href="./index.html" class="block w-full rounded-2xl border border-gold/25 bg-ink/60 py-3.5 text-center text-sm tracking-[.2em] text-mist transition active:scale-95">返回点餐首页</a>
           <p class="pt-1 text-center text-[10px] tracking-widest text-mist/60">牌意仅供娱乐与灵感 · 真正的答案在你心里</p>
@@ -417,6 +433,7 @@
       $('#sheet').classList.add('rise-in');
       const again = $('#btnAgain');
       if (again) again.addEventListener('click', () => { closeSheet(); picked = []; renderIntro(); });
+      $('#btnInterpret').addEventListener('click', openInterpret);
     }
 
     function closeSheet() {
@@ -424,6 +441,83 @@
       $('#sheet').classList.remove('rise-in');
     }
     $('#sheetMask').addEventListener('click', () => { closeSheet(); picked = []; renderIntro(); });
+
+    /* ==================== AI 解读（DeepSeek） ====================
+       Key 只存于服务端环境变量，前端只调用 /api/interpret-tarot */
+    function openInterpret() {
+      $('#readBody').innerHTML = `
+        <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
+        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">向塔罗提个问题</h3>
+        <p class="mt-2 text-xs leading-5 text-mist">结合你抽到的牌，告诉我想了解什么，我来为你解读。</p>
+        <textarea id="readQuestion" rows="3" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
+          class="mt-4 h-24 w-full resize-none rounded-2xl border border-gold/30 bg-ink/60 p-3 text-sm text-goldl outline-none transition focus:border-gold/70"></textarea>
+        <div class="mt-4 flex gap-3">
+          <button id="readCancel" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">取消</button>
+          <button id="readGo" class="flex-1 rounded-2xl bg-gold/90 py-3 text-sm font-bold text-ink transition active:scale-95">开始解读</button>
+        </div>`;
+      $('#readWrap').classList.remove('hidden');
+      $('#readCancel').addEventListener('click', closeRead);
+      $('#readGo').addEventListener('click', doInterpret);
+      setTimeout(() => $('#readQuestion').focus(), 80);
+    }
+
+    function closeRead() { $('#readWrap').classList.add('hidden'); }
+    $('#readMask').addEventListener('click', closeRead);
+
+    async function doInterpret() {
+      const q = $('#readQuestion').value.trim();
+      if (!q) { $('#readQuestion').focus(); return; }
+      $('#readBody').innerHTML = `
+        <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
+        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">正在解读…</h3>
+        <div class="mt-6 flex flex-col items-center gap-3 py-8">
+          <div class="h-8 w-8 animate-spin rounded-full border-2 border-gold/30 border-t-gold"></div>
+          <p class="text-xs text-mist">塔罗师正在凝视牌面…</p>
+        </div>`;
+      try {
+        const res = await fetch('/api/interpret-tarot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q, cards: lastCards })
+        });
+        const data = await res.json();
+        if (!res.ok || data.code !== 0) throw new Error(data.msg || '解读失败');
+        showReading(data.text);
+      } catch (err) {
+        $('#readBody').innerHTML = `
+          <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
+          <h3 class="serif mt-1 text-lg tracking-widest text-goldl">解读出了点小状况</h3>
+          <p class="mt-3 text-sm leading-6 text-mist">${escapeHtml(err.message)}</p>
+          <div class="mt-5 flex gap-3">
+            <button id="readRetry" class="flex-1 rounded-2xl border border-gold/40 bg-gold/10 py-3 text-sm text-goldl transition active:scale-95">重试</button>
+            <button id="readClose2" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">关闭</button>
+          </div>`;
+        $('#readRetry').addEventListener('click', openInterpret);
+        $('#readClose2').addEventListener('click', closeRead);
+      }
+    }
+
+    function showReading(text) {
+      $('#readBody').innerHTML = `
+        <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
+        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">塔罗解读</h3>
+        <div class="mt-4 space-y-3 text-[13px] leading-7 text-goldl/85">${renderReading(text)}</div>
+        <button id="readDone" class="mt-6 w-full rounded-2xl border border-gold/40 bg-gold/10 py-3.5 text-sm tracking-[.2em] text-goldl transition active:scale-95">收下这份解读</button>`;
+      $('#readDone').addEventListener('click', closeRead);
+    }
+
+    function renderReading(text) {
+      return String(text).split(/\n+/).filter(l => l.trim()).map(l => {
+        let line = l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        line = line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-gold">$1</strong>');
+        line = line.replace(/^#+\s*/, '');
+        return `<p>${line}</p>`;
+      }).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
     /* ==================== 启动 ==================== */
     renderIntro();
