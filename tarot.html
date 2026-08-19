@@ -188,7 +188,14 @@
       gesture.active = true;
       gesture.x0 = e.clientX; gesture.y0 = e.clientY;
       gesture.t0 = Date.now(); gesture.moved = 0;
-      try { stage.setPointerCapture(e.pointerId); } catch {}
+      // 关键：只在非按钮/链接元素上捕获指针。
+      // setPointerCapture 会把 click 事件的 target 变为捕获元素（stage），
+      // 导致按钮的 click 监听永远收不到事件（表现为"点击无反应"）。
+      const t = e.target;
+      const isInteractive = t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement;
+      if (!isInteractive) {
+        try { stage.setPointerCapture(e.pointerId); } catch {}
+      }
     });
     stage.addEventListener('pointermove', e => {
       if (!gesture.active) return;
