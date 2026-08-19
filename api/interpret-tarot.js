@@ -1,14 +1,18 @@
 /**
  * 塔罗牌意解读 API（Vercel Serverless）
  *
- * 安全设计：DeepSeek API Key 只从环境变量 DEEPSEEK_API_KEY 读取，
- * 绝不写入代码 / 前端 / git。部署前在 Vercel 控制台配置该环境变量。
+ * 安全设计：凭据只从环境变量读取，绝不写入代码 / 前端 / git。
+ *   DEEPSEEK_API_KEY   —— DeepSeek 官方或中转站的 API Key（必填）
+ *   DEEPSEEK_BASE_URL  —— 接口地址（可选，默认官方 https://api.deepseek.com；
+ *                          中转站填自己的地址，如 https://your-relay.com/v1）
+ *   DEEPSEEK_MODEL     —— 模型名（可选，默认 deepseek-v4-flash）
  *
  * 前端调用：POST /api/interpret-tarot
  *   body: { question: string, cards: [{ cn, en, reversed, kw, up, rev }] }
  *   返回: { code: 0, text: string } | { code: -1, msg: string }
  */
-const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_BASE = (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
+const DEEPSEEK_URL = DEEPSEEK_BASE + '/chat/completions';
 const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
 
 function validBody(body) {
