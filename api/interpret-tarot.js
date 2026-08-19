@@ -6,6 +6,7 @@
  *   DEEPSEEK_BASE_URL  —— 接口地址（可选，默认官方 https://api.deepseek.com；
  *                          中转站填自己的地址，如 https://your-relay.com/v1）
  *   DEEPSEEK_MODEL     —— 模型名（可选，默认 deepseek-v4-flash）
+ *   DEEPSEEK_UA        —— 请求 User-Agent（可选；中转站常要求浏览器型 UA）
  *
  * 前端调用：POST /api/interpret-tarot
  *   body: { question: string, cards: [{ cn, en, reversed, kw, up, rev }] }
@@ -14,6 +15,8 @@
 const DEEPSEEK_BASE = (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
 const DEEPSEEK_URL = DEEPSEEK_BASE + '/chat/completions';
 const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash';
+const DEEPSEEK_UA = process.env.DEEPSEEK_UA ||
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
 function validBody(body) {
   if (!body || typeof body !== 'object') return false;
@@ -70,7 +73,8 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
+        'User-Agent': DEEPSEEK_UA
       },
       body: JSON.stringify(payload)
     });
