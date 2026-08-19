@@ -1,2 +1,7 @@
 .hermes/
 CLAUDE.md
+
+# 项目工作区数据（记忆/测试脚本，不入库）
+.workbuddy/
+# 塔罗设计原稿（PNG 15MB，运行时仅需 webp）
+design-concepts/

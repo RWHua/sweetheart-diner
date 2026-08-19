@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0b14">
+  <title>每日塔罗 · 专属点餐</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:   '#0d0b14',
+            ink2:  '#161226',
+            gold:  '#c9a227',
+            goldl: '#e8c76a',
+            mist:  '#8f86a8'
+          },
+          boxShadow: {
+            glow: '0 0 40px rgba(201,162,39,.18)',
+            card: '0 10px 30px rgba(0,0,0,.55)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; }
+    body { -webkit-tap-highlight-color: transparent; }
+    .serif { font-family: Georgia, 'Times New Roman', serif; }
+
+    /* 手势区：完全接管触摸，禁止浏览器滚动/缩放手势（Android & iOS） */
+    #stage { touch-action: none; user-select: none; -webkit-user-select: none; }
+    /* 结果面板允许纵向滚动 */
+    #sheet { touch-action: pan-y; }
+
+    /* ---------- 3D 卡牌 ---------- */
+    .card3d { transform-style: preserve-3d; transition: transform .9s cubic-bezier(.22,.9,.3,1); }
+    .card3d.flipped { transform: rotateY(180deg); }
+    .card3d .face {
+      position: absolute; inset: 0; border-radius: 1rem; overflow: hidden;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    }
+    .card3d .front { transform: rotateY(180deg); }
+    .card3d .face img.reversed { transform: rotate(180deg); }
+
+    /* ---------- 洗牌动画 ---------- */
+    @keyframes shuffleL {
+      0%,100% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(-46px) rotate(-7deg); }
+      50% { transform: translateX(0) rotate(0deg); }
+      75% { transform: translateX(-30px) rotate(4deg); }
+    }
+    @keyframes shuffleR {
+      0%,100% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(46px) rotate(7deg); }
+      50% { transform: translateX(0) rotate(0deg); }
+      75% { transform: translateX(30px) rotate(-4deg); }
+    }
+    .shuffle-l { animation: shuffleL .45s ease-in-out infinite; }
+    .shuffle-r { animation: shuffleR .45s ease-in-out infinite; }
+
+    @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .floaty { animation: floaty 3.2s ease-in-out infinite; }
+
+    @keyframes riseIn { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: translateY(0); } }
+    .rise-in { animation: riseIn .5s ease-out both; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .fade-in { animation: fadeIn .4s ease-out both; }
+
+    @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: .9; } }
+    .star { position: absolute; border-radius: 9999px; background: #e8c76a; animation: twinkle 3s ease-in-out infinite; }
+  </style>
+</head>
+
+<body class="min-w-[320px] bg-ink text-goldl antialiased">
+
+  <!-- 星空背景 -->
+  <div id="stars" class="pointer-events-none fixed inset-0 z-0"></div>
+  <div class="pointer-events-none fixed inset-0 z-0" style="background: radial-gradient(ellipse 90% 60% at 50% 0%, rgba(201,162,39,.10), transparent 60%), radial-gradient(ellipse 80% 50% at 50% 110%, rgba(90,60,160,.14), transparent 60%);"></div>
+
+  <div class="relative z-10 mx-auto flex min-h-[100dvh] max-w-[430px] flex-col">
+
+    <!-- ==================== 顶栏 ==================== -->
+    <header class="flex items-center justify-between px-5 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
+      <a href="./index.html" class="flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-ink2/80 text-lg text-gold transition active:scale-95" aria-label="返回首页">←</a>
+      <div class="text-center">
+        <p class="serif text-[10px] tracking-[.35em] text-mist">DAILY TAROT</p>
+        <h1 class="serif mt-0.5 text-lg tracking-[.2em] text-goldl">每日塔罗</h1>
+      </div>
+      <div class="h-10 w-10"></div>
+    </header>
+
+    <!-- ==================== 舞台（手势区） ==================== -->
+    <main id="stage" class="relative flex-1"></main>
+
+    <!-- ==================== 底部提示 ==================== -->
+    <p id="hint" class="pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2 text-center text-xs tracking-widest text-mist"></p>
+  </div>
+
+  <!-- ==================== 结果面板 ==================== -->
+  <div id="sheetWrap" class="fixed inset-0 z-40 hidden">
+    <div id="sheetMask" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div id="sheet" class="absolute inset-x-0 bottom-0 mx-auto max-h-[82dvh] max-w-[430px] overflow-y-auto rounded-t-[2rem] border-t border-gold/30 bg-ink2 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5">
+      <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-gold/30"></div>
+      <div id="sheetBody"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ==================== 牌组数据（22 张大阿尔克那） ==================== */
+    const DECK = [
+      { slug:'00-fool',           num:'0',    cn:'愚人',     en:'THE FOOL',          kw:['新的开始','冒险','纯真'],   up:'一段全新旅程的开始。保持开放与勇气，顺势而为，未知的路上藏着惊喜。', rev:'冲动行事、欠缺考虑。心可以再大一点，但脚步要先看清再迈。' },
+      { slug:'01-magician',       num:'I',    cn:'魔术师',   en:'THE MAGICIAN',      kw:['创造力','行动','资源整合'], up:'资源和能力都在你手中。今天是把想法变成现实的好日子，大胆开始。', rev:'才能被浪费或方向不明。警惕空谈，先聚焦一件最重要的事。' },
+      { slug:'02-high-priestess', num:'II',   cn:'女祭司',   en:'THE HIGH PRIESTESS',kw:['直觉','潜意识','内在智慧'], up:'相信直觉。答案不在别处，适合安静地倾听内心的声音。', rev:'忽略了内心的声音，被表象迷惑。慢下来，答案会浮上来。' },
+      { slug:'03-empress',        num:'III',  cn:'女皇',     en:'THE EMPRESS',       kw:['丰盛','滋养','爱与美'],     up:'被爱包围的一天。适合享受美食、表达温柔，好好款待自己和身边的人。', rev:'过度付出或依赖。在照顾别人之前，先把自己照顾好。' },
+      { slug:'04-emperor',        num:'IV',   cn:'皇帝',     en:'THE EMPEROR',       kw:['秩序','掌控','责任'],       up:'适合制定计划、确立规则的一天。稳扎稳打，事情会按你的节奏推进。', rev:'控制欲过强或缺乏自律。注意刚柔平衡，别把弦绷得太紧。' },
+      { slug:'05-hierophant',     num:'V',    cn:'教皇',     en:'THE HIEROPHANT',    kw:['传统','指引','信念'],       up:'适合向有经验的人请教。遵循被验证过的方法，会有踏实的收获。', rev:'别被固有观念束缚。今天可以试着打破一次常规。' },
+      { slug:'06-lovers',         num:'VI',   cn:'恋人',     en:'THE LOVERS',        kw:['爱','契合','选择'],         up:'感情升温的一天。适合表白、约会，关系中的重要决定会得到祝福。', rev:'沟通出现分歧。逃避不如坦诚，把心里的话说给对方听。' },
+      { slug:'07-chariot',        num:'VII',  cn:'战车',     en:'THE CHARIOT',       kw:['意志','胜利','前进'],       up:'目标明确就全速前进。自律与专注会带你拿下今天的胜利。', rev:'方向失控或动力不足。先停下来校准目标，再踩油门。' },
+      { slug:'08-strength',       num:'VIII', cn:'力量',     en:'STRENGTH',          kw:['勇气','柔韧','耐心'],       up:'以柔克刚的一天。耐心和温柔，比强硬更有力量。', rev:'自我怀疑在冒头。别被情绪牵着走，你比想象中强大。' },
+      { slug:'09-hermit',         num:'IX',   cn:'隐士',     en:'THE HERMIT',        kw:['内省','独处','寻找答案'],   up:'给自己一点独处的时间。沉淀之后，答案自会浮现。', rev:'过度封闭自己。灯点亮了，也要记得走回人群。' },
+      { slug:'10-wheel',          num:'X',    cn:'命运之轮', en:'WHEEL OF FORTUNE',  kw:['转机','循环','机遇'],       up:'运气正在转动。抓住今天突如其来的机会，它可能改变走向。', rev:'暂时的停滞期。接受变化，才能迎来下一轮上升。' },
+      { slug:'11-justice',        num:'XI',   cn:'正义',     en:'JUSTICE',           kw:['公平','真相','因果'],       up:'付出会得到公正的回应。今天适合做理性、清醒的决定。', rev:'可能遇到不公平的对待。先检视自己，再评判他人。' },
+      { slug:'12-hanged-man',     num:'XII',  cn:'倒吊人',   en:'THE HANGED MAN',    kw:['换位思考','等待','沉淀'],   up:'换个角度看问题。暂停不是放弃，而是另一种前进。', rev:'无意义的僵持。该放手时就放手，别耗在原地。' },
+      { slug:'13-death',          num:'XIII', cn:'死神',     en:'DEATH',             kw:['结束','蜕变','重生'],       up:'一个阶段的结束，是新生的开始。勇敢告别旧事物，轻装上路。', rev:'在抗拒改变。执念只会让你停在原地，松开手才有新可能。' },
+      { slug:'14-temperance',     num:'XIV',  cn:'节制',     en:'TEMPERANCE',        kw:['平衡','调和','节制'],       up:'保持节奏与耐心。凡事适度，细水长流的日子最安稳。', rev:'状态有些失衡。注意作息与分寸，别把任何事做到极端。' },
+      { slug:'15-devil',          num:'XV',   cn:'恶魔',     en:'THE DEVIL',         kw:['束缚','欲望','执念'],       up:'看清是什么困住了你。意识到束缚的存在，就是松绑的第一步。', rev:'挣脱枷锁的机会出现了。勇敢一点，走出来。' },
+      { slug:'16-tower',          num:'XVI',  cn:'高塔',     en:'THE TOWER',         kw:['突变','觉醒','破而后立'],   up:'意料之外的变化会打破旧格局。别怕，重建之后会更坚固。', rev:'在逃避必要的改变。拖延只会让冲击来得更猛。' },
+      { slug:'17-star',           num:'XVII', cn:'星星',     en:'THE STAR',          kw:['希望','疗愈','指引'],       up:'充满希望的一天。许个愿吧，宇宙正在回应你。', rev:'信心有点不足。别忘了，你自己就曾是那束光。' },
+      { slug:'18-moon',           num:'XVIII',cn:'月亮',     en:'THE MOON',          kw:['潜意识','迷雾','不安'],     up:'事情可能不像表面那样。放慢脚步，等雾散了再做决定。', rev:'迷雾正在散去，真相即将浮现，不安会随之消退。' },
+      { slug:'19-sun',            num:'XIX',  cn:'太阳',     en:'THE SUN',           kw:['喜悦','成功','活力'],       up:'阳光普照的一天。做什么都自带光芒，尽情享受就好。', rev:'一点小阴霾遮不住太阳。快乐其实就在身边，抬眼看看。' },
+      { slug:'20-judgement',      num:'XX',   cn:'审判',     en:'JUDGEMENT',         kw:['觉醒','召唤','答案'],       up:'听从内心的召唤。过去的努力，将在今天迎来答案。', rev:'自我怀疑让你犹豫。别忽视内心真正的渴望。' },
+      { slug:'21-world',          num:'XXI',  cn:'世界',     en:'THE WORLD',         kw:['圆满','完成','新循环'],     up:'一个圆满的达成。值得庆祝，也值得为下一段旅程干杯。', rev:'只差最后一环就圆满。回头看一眼，补上那块拼图。' }
+    ];
+
+    const $ = s => document.querySelector(s);
+    const stage = $('#stage'), hint = $('#hint');
+    const IMG = slug => `./images/tarot/${slug}.webp`;
+    const BACK = IMG('back');
+    const DAILY_KEY = 'sweetheart-tarot-daily';
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+
+    /* ==================== 星空背景 ==================== */
+    (function stars() {
+      const wrap = $('#stars');
+      for (let i = 0; i < 36; i++) {
+        const s = document.createElement('span');
+        const size = Math.random() * 2 + 1;
+        s.className = 'star';
+        s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;width:${size}px;height:${size}px;animation-delay:${(Math.random()*3).toFixed(1)}s;opacity:.3`;
+        wrap.appendChild(s);
+      }
+    })();
+
+    /* ==================== 图片预加载 ==================== */
+    window.addEventListener('load', () => {
+      setTimeout(() => { DECK.forEach(c => { const i = new Image(); i.src = IMG(c.slug); }); }, 800);
+    });
+
+    /* ==================== 全局状态 ==================== */
+    let mode = 'daily';          // daily | trio
+    let picked = [];             // { idx, reversed }
+    let busy = false;
+
+    /* ==================== localStorage 安全读写 ====================
+       file:// 打开 / 隐私模式 / 存储被禁用时 setItem 会抛异常，
+       必须兜底，否则抽牌流程会被中断（表现为点击后无反应） */
+    function storeGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+    function storeSet(key, val) { try { localStorage.setItem(key, val); return true; } catch (e) { return false; } }
+    const store = {
+      get: storeGet,
+      set: storeSet
+    };
+
+    /* ==================== 手势层（Pointer Events，iOS 13+ / Android 全兼容） ====================
+       参考 Hammer.js / AlloyFinger 的手势判定模型：
+       位移 < 12px 且时长 < 400ms → tap；否则 pan（位移驱动扇形旋转） */
+    const gesture = {
+      active: false, x0: 0, y0: 0, t0: 0, moved: 0,
+      onTap: null, onPan: null, onPanEnd: null
+    };
+    stage.addEventListener('pointerdown', e => {
+      gesture.active = true;
+      gesture.x0 = e.clientX; gesture.y0 = e.clientY;
+      gesture.t0 = Date.now(); gesture.moved = 0;
+      try { stage.setPointerCapture(e.pointerId); } catch {}
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!gesture.active) return;
+      const dx = e.clientX - gesture.x0, dy = e.clientY - gesture.y0;
+      gesture.moved = Math.max(gesture.moved, Math.abs(dx) + Math.abs(dy));
+      if (gesture.onPan) gesture.onPan(dx, dy);
+    });
+    const endGesture = e => {
+      if (!gesture.active) return;
+      gesture.active = false;
+      const dt = Date.now() - gesture.t0;
+      if (gesture.moved < 12 && dt < 400 && gesture.onTap) {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cardEl = el && el.closest('[data-slot]');
+        gesture.onTap(cardEl ? +cardEl.dataset.slot : null);
+      } else if (gesture.onPanEnd) {
+        gesture.onPanEnd();
+      }
+    };
+    stage.addEventListener('pointerup', endGesture);
+    stage.addEventListener('pointercancel', endGesture);
+    // 拦截 iOS 双击缩放与长按弹出菜单
+    stage.addEventListener('contextmenu', e => e.preventDefault());
+    stage.addEventListener('dblclick', e => e.preventDefault());
+
+    /* ==================== 页面状态：入口 ==================== */
+    function renderIntro() {
+      busy = false;
+      gesture.onTap = gesture.onPan = gesture.onPanEnd = null;
+      const daily = getDaily();
+      hint.textContent = '静心默念你的问题 · 同一问题一天只问一次';
+      stage.innerHTML = `
+        <div class="flex h-full flex-col items-center justify-center gap-8 px-6">
+          <div class="floaty relative h-56 w-40">
+            <img src="${BACK}" alt="塔罗牌背" class="absolute inset-0 h-full w-full -rotate-6 rounded-2xl border border-gold/40 object-cover shadow-card">
+            <img src="${BACK}" alt="" class="absolute inset-0 h-full w-full rotate-3 rounded-2xl border border-gold/40 object-cover shadow-card">
+            <img src="${BACK}" alt="" class="absolute inset-0 h-full w-full rounded-2xl border border-gold/60 object-cover shadow-glow">
+          </div>
+          <div class="w-full space-y-3">
+            <button id="btnDaily" class="w-full rounded-2xl border border-gold/50 bg-gold/15 py-4 text-sm font-bold tracking-[.2em] text-goldl transition active:scale-95">
+              ${daily ? '查看今日牌面 ✦ 已抽取' : '每日一抽 ✦ 今日运势'}
+            </button>
+            <button id="btnTrio" class="w-full rounded-2xl border border-gold/25 bg-ink2/60 py-4 text-sm tracking-[.2em] text-mist transition active:scale-95">
+              圣三角牌阵 ✦ 过去 · 现在 · 未来
+            </button>
+          </div>
+        </div>`;
+      $('#btnDaily').addEventListener('click', () => {
+        mode = 'daily';
+        const d = getDaily();
+        if (d) { picked = [{ idx: d.idx, reversed: d.reversed }]; renderResult(true); }
+        else startShuffle();
+      });
+      $('#btnTrio').addEventListener('click', () => { mode = 'trio'; startShuffle(); });
+    }
+
+    function getDaily() {
+      const raw = storeGet(DAILY_KEY);
+      try {
+        const d = raw ? JSON.parse(raw) : null;
+        return d && d.date === todayStr() ? d : null;
+      } catch { return null; }
+    }
+
+    /* ==================== 洗牌 ==================== */
+    function startShuffle() {
+      busy = true;
+      hint.textContent = '洗牌中 · 心里想着你的问题…';
+      stage.innerHTML = `
+        <div class="flex h-full items-center justify-center">
+          <div class="relative h-56 w-40">
+            <img src="${BACK}" alt="" class="shuffle-l absolute inset-0 h-full w-full rounded-2xl border border-gold/50 object-cover shadow-card">
+            <img src="${BACK}" alt="" class="shuffle-r absolute inset-0 h-full w-full rounded-2xl border border-gold/50 object-cover shadow-card">
+          </div>
+        </div>`;
+      setTimeout(renderFan, 1900);
+    }
+
+    /* ==================== 扇形铺牌 + 手势选牌 ==================== */
+    let fanOffset = 0;            // 当前扇形旋转偏移（deg）
+    const FAN_STEP = 3.4;         // 每张牌间隔角
+    const FAN_CLAMP = 42;
+
+    function fanAngle(i) { return (i - (DECK.length - 1) / 2) * FAN_STEP + fanOffset; }
+
+    function renderFan() {
+      busy = false;
+      fanOffset = 0;
+      hint.textContent = mode === 'daily'
+        ? '左右滑动转动牌阵 · 点选一张与你感应最强的牌'
+        : `点选第 ${picked.length + 1} 张牌（共 3 张）· 可滑动转动牌阵`;
+
+      stage.innerHTML = `
+        <div id="fan" class="absolute inset-x-0 bottom-[8%] top-0">
+          ${DECK.map((c, i) => `
+            <div class="fan-card absolute left-1/2 bottom-0 h-36 w-24 cursor-pointer" data-slot="${i}"
+                 style="margin-left:-3rem; transform-origin: 50% 150%; transition: transform .18s ease-out;">
+              <img src="${BACK}" alt="牌背" draggable="false"
+                   class="h-full w-full rounded-xl border border-gold/40 object-cover shadow-card">
+            </div>`).join('')}
+        </div>
+        ${picked.length ? `<div class="absolute inset-x-0 top-2 flex justify-center gap-3 px-6">
+          ${picked.map((p, k) => `
+            <div class="fade-in text-center">
+              <img src="${BACK}" alt="" class="h-28 w-[4.5rem] rounded-lg border border-gold/50 object-cover shadow-card">
+              <p class="mt-1 text-[10px] tracking-widest text-mist">${['过去','现在','未来'][k]}</p>
+            </div>`).join('')}
+        </div>` : ''}`;
+
+      layoutFan();
+
+      // 手势绑定：pan 转动扇形，tap 选牌
+      let base = 0;
+      gesture.onPan = dx => { fanOffset = Math.max(-FAN_CLAMP, Math.min(FAN_CLAMP, base + dx * 0.12)); layoutFan(); };
+      gesture.onPanEnd = () => { base = fanOffset; };
+      gesture.onTap = slot => {
+        if (slot == null || busy) return;
+        if (picked.some(p => p.idx === slot)) return; // 已抽的牌不重复
+        pickCard(slot);
+      };
+    }
+
+    function layoutFan() {
+      document.querySelectorAll('.fan-card').forEach((el, i) => {
+        const a = fanAngle(i);
+        el.style.transform = `rotate(${a}deg)`;
+        // 已抽走的牌淡出
+        const taken = picked.some(p => p.idx === i);
+        el.style.opacity = taken ? '.15' : '1';
+        el.style.zIndex = i;
+      });
+    }
+
+    /* ==================== 抽牌 → 居中翻牌 ==================== */
+    function pickCard(slot) {
+      busy = true;
+      const reversed = Math.random() < 0.5;
+      picked.push({ idx: slot, reversed });
+
+      if (mode === 'daily') {
+        storeSet(DAILY_KEY, JSON.stringify({ date: todayStr(), idx: slot, reversed }));
+      }
+
+      const card = DECK[slot];
+      hint.textContent = '✦ 感应完成 ✦';
+
+      // 隐藏扇形，展示居中翻牌
+      const need = mode === 'trio' ? 3 : 1;
+      const last = picked.length === need;
+
+      stage.innerHTML = `
+        <div class="flex h-full items-center justify-center" style="perspective: 1200px;">
+          ${last && mode === 'trio'
+            ? `<div class="flex items-end justify-center gap-3 px-4">
+                ${picked.map((p, k) => revealCardHTML(p, k, 'h-48 w-32')).join('')}
+              </div>`
+            : revealCardHTML(picked[picked.length - 1], 0, 'h-72 w-48')}
+        </div>`;
+
+      // 依次翻牌
+      document.querySelectorAll('.card3d').forEach((el, k) => {
+        setTimeout(() => el.classList.add('flipped'), 450 + k * 550);
+      });
+
+      const totalFlip = 450 + (last ? picked.length - 1 : 0) * 550 + 1100;
+      setTimeout(() => {
+        if (last) renderResult(false);
+        else renderFan();
+      }, totalFlip);
+    }
+
+    function revealCardHTML(p, k, size) {
+      const card = DECK[p.idx];
+      return `
+        <div class="text-center">
+          <div class="card3d relative ${size}" style="perspective: 1200px;">
+            <div class="face shadow-card"><img src="${BACK}" alt="牌背" draggable="false" class="h-full w-full object-cover"></div>
+            <div class="face front shadow-glow"><img src="${IMG(card.slug)}" alt="${card.cn}" draggable="false" class="h-full w-full object-cover ${p.reversed ? 'reversed' : ''}"></div>
+          </div>
+          ${mode === 'trio' ? `<p class="mt-2 text-[10px] tracking-[.3em] text-mist">${['过去','现在','未来'][k]}</p>` : ''}
+        </div>`;
+    }
+
+    /* ==================== 结果面板 ==================== */
+    function renderResult(isReplay) {
+      hint.textContent = '';
+      const labels = mode === 'trio' ? ['过去', '现在', '未来'] : ['今日牌面'];
+
+      $('#sheetBody').innerHTML = `
+        <div class="space-y-6">
+          ${picked.map((p, k) => {
+            const c = DECK[p.idx];
+            return `
+            <div class="rise-in flex gap-4" style="animation-delay:${k * .12}s">
+              <img src="${IMG(c.slug)}" alt="${c.cn}" class="h-40 w-[6.7rem] shrink-0 rounded-xl border border-gold/40 object-cover shadow-card ${p.reversed ? 'rotate-180' : ''}">
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] tracking-[.3em] text-mist">${labels[k]} ${isReplay ? '· 今日已抽取' : ''}</p>
+                <h3 class="serif mt-1 text-xl tracking-widest text-goldl">${c.cn}
+                  <span class="ml-1 text-xs text-mist">${c.en}</span>
+                </h3>
+                <span class="mt-1.5 inline-block rounded-full border px-2.5 py-0.5 text-[11px] ${p.reversed ? 'border-purple-400/40 text-purple-300' : 'border-gold/50 text-goldl'}">
+                  ${p.reversed ? '逆位' : '正位'}
+                </span>
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  ${c.kw.map(w => `<span class="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] text-gold/90">${w}</span>`).join('')}
+                </div>
+                <p class="mt-2.5 text-[13px] leading-6 text-goldl/75">${p.reversed ? c.rev : c.up}</p>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="mt-7 space-y-3">
+          ${mode === 'trio' ? '<button id="btnAgain" class="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3.5 text-sm tracking-[.2em] text-goldl transition active:scale-95">再抽一次</button>' : ''}
+          <a href="./index.html" class="block w-full rounded-2xl border border-gold/25 bg-ink/60 py-3.5 text-center text-sm tracking-[.2em] text-mist transition active:scale-95">返回点餐首页</a>
+          <p class="pt-1 text-center text-[10px] tracking-widest text-mist/60">牌意仅供娱乐与灵感 · 真正的答案在你心里</p>
+        </div>`;
+
+      $('#sheetWrap').classList.remove('hidden');
+      $('#sheet').classList.add('rise-in');
+      const again = $('#btnAgain');
+      if (again) again.addEventListener('click', () => { closeSheet(); picked = []; renderIntro(); });
+    }
+
+    function closeSheet() {
+      $('#sheetWrap').classList.add('hidden');
+      $('#sheet').classList.remove('rise-in');
+    }
+    $('#sheetMask').addEventListener('click', () => { closeSheet(); picked = []; renderIntro(); });
+
+    /* ==================== 启动 ==================== */
+    renderIntro();
+  </script>
+</body>
+</html>
