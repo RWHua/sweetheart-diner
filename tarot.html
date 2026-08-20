@@ -35,8 +35,8 @@
     /* 两行截断（历史记录预览） */
     .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-    /* 牌面放大图（保持正方形） */
-    #zoomImg { width: min(48dvh, 78vw); height: min(48dvh, 78vw); }
+    /* 牌面放大图：按原始纵横比显示（2:3 长方形 / 1:1 女祭司），不裁剪不变形 */
+    #zoomImg { width: min(78vw, calc(52dvh * 2 / 3)); height: auto; max-height: 62dvh; object-fit: contain; border-radius: 1rem; }
 
     /* 手势区：完全接管触摸，禁止浏览器滚动/缩放手势（Android & iOS） */
     #stage { touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -186,7 +186,7 @@
     <div id="zoomMask" class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
     <div class="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-6 py-[calc(1rem+env(safe-area-inset-top))]">
       <button id="zoomClose" class="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] flex h-10 w-10 items-center justify-center rounded-full border border-gold/40 bg-ink2/80 text-xl leading-none text-goldl transition active:scale-95" aria-label="关闭">✕</button>
-      <img id="zoomImg" src="" alt="" class="rounded-2xl border border-gold/50 object-cover shadow-glow">
+      <img id="zoomImg" src="" alt="" class="border border-gold/50 shadow-glow">
       <div class="w-full max-w-[380px] overflow-y-auto text-center" style="max-height: 44dvh;">
         <p id="zoomCn" class="serif text-2xl tracking-[.2em] text-goldl"></p>
         <p id="zoomEn" class="mt-0.5 text-[11px] tracking-[.2em] text-mist"></p>
