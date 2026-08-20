@@ -1,5 +1,6 @@
 const API = 'https://api.ofox.io/v1/images/generations';
-const KEY = process.env.OFX_API_KEY || 'sk-of-odRETTXAQExQWZoBxZGOmzyCbEVNuqDVSzstTlATQKdWvdqgRqwZlVXhddwoECiI';
+const KEY = process.env.OFX_API_KEY || '';
+if (!KEY) console.warn('OFX_API_KEY 未设置');
 const fs = require('fs');
 const path = require('path');
 const DIR = 'C:/Users/lenovo/tmp/tarot-gen';

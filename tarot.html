@@ -217,7 +217,7 @@
 
     /* ==================== 图片预加载 ==================== */
     window.addEventListener('load', () => {
-      setTimeout(() => { DECK.forEach(c => { const i = new Image(); i.src = IMG(c.slug); }); }, 800);
+      setTimeout(() => { const i = new Image(); i.src = IMG('back'); }, 800);
     });
 
     /* ==================== 全局状态 ==================== */

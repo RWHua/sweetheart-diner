@@ -5,3 +5,4 @@ CLAUDE.md
 .workbuddy/
 # 塔罗设计原稿（PNG 15MB，运行时仅需 webp）
 design-concepts/
+__pycache__/
