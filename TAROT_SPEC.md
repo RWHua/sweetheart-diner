@@ -181,6 +181,27 @@ centered vertical composition, square format
 - 牌阵扩展（仅单抽 + 三牌阵）
 - 首页之外的入口改造
 
+## 6.5 追加功能（2026-08-20 用户新需求）
+
+### F11 历史记录（塔罗首页右上角入口）
+- tarot.html 首页（renderIntro）顶部右侧加「记录」图标按钮（SVG 线条风格，符合暗色 UI，不用 emoji）
+- 点击打开历史面板（弹层，复用 readWrap/sheet 样式）：列表展示每次抽取记录：日期+时间、问题、牌（缩略图+中文名+正逆位徽章）、AI 解读内容
+- 数据存储：localStorage key `sweetheart-tarot-history` = 数组 `[{id, date, time, mode, question, cards:[{idx, reversed}], reading}]`（id 可用时间戳）
+- 抽牌完成（saveRecord 时）写入 history（reading 为空）；AI 解读成功（showReading 拿到 text 后）更新对应记录的 reading
+- 历史面板支持：点击条目查看详情（展开完整解读）、提供「清空记录」按钮（二次确认）
+- 注意与现有按问题锁定（sweetheart-tarot-q-<hash>）并存：锁定记录管"当天不能重抽"，history 管"长期记录"
+
+### F12 重复问题提示（输入问题后）
+- renderQuestion 输入框下加一行小字：「今日已问 N 个问题」（从 history 统计今天 date 匹配的记录数）
+- confirmQuestion 确认时：若该问题今天已抽过（getLocked 命中）→ 用 toast 提示「该问题今天已问过，展示之前的结果」（替代原生 alert），随后展示历史结果（现有 renderResult(true) 逻辑）
+- 若问题与历史中其他问题完全相同（跨天）→ toast 提示「这个问题之前问过（N 天前），结果在历史记录里」但不拦截，正常抽牌
+
+### F13 牌面放大查看
+- 翻牌结果（revealCardHTML 的 front face）和结果面板（sheet 缩略图）中的牌面可点击
+- 点击 → 全屏放大弹层：#zoomWrap（遮罩 + 居中大图 + 右上角 ✕ 关闭按钮）
+- 放大图下方显示：牌中文名 + 英文名 + 正/逆位徽章 + 关键词标签 + 牌意文案（up/rev）
+- 弹层支持点击遮罩关闭；✕ 按钮明显
+
 ## 7. 执行顺序（阶段划分）
 
 ```

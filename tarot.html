@@ -32,6 +32,12 @@
     body { -webkit-tap-highlight-color: transparent; }
     .serif { font-family: Georgia, 'Times New Roman', serif; }
 
+    /* 两行截断（历史记录预览） */
+    .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* 牌面放大图（保持正方形） */
+    #zoomImg { width: min(48dvh, 78vw); height: min(48dvh, 78vw); }
+
     /* 手势区：完全接管触摸，禁止浏览器滚动/缩放手势（Android & iOS） */
     #stage { touch-action: none; user-select: none; -webkit-user-select: none; }
     /* 结果面板允许纵向滚动 */
@@ -132,7 +138,13 @@
         <p class="serif text-[10px] tracking-[.35em] text-mist">DAILY TAROT</p>
         <h1 class="serif mt-0.5 text-lg tracking-[.2em] text-goldl">每日塔罗</h1>
       </div>
-      <div class="h-10 w-10"></div>
+      <button id="btnHistory" class="flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-ink2/80 text-gold transition active:scale-95" aria-label="历史记录">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 2.6-6.4"></path>
+          <path d="M3 4v4h4"></path>
+          <path d="M12 7.5V12l3 1.8"></path>
+        </svg>
+      </button>
     </header>
 
     <!-- ==================== 舞台（手势区） ==================== -->
@@ -157,6 +169,31 @@
     <div id="readSheet" class="absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[430px] overflow-y-auto rounded-t-[2rem] border-t border-gold/30 bg-ink2 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5" style="touch-action: pan-y;">
       <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-gold/30"></div>
       <div id="readBody"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 历史记录面板 ==================== -->
+  <div id="historyWrap" class="fixed inset-0 z-50 hidden">
+    <div id="historyMask" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div class="absolute inset-x-0 bottom-0 mx-auto max-h-[85dvh] max-w-[430px] overflow-y-auto rounded-t-[2rem] border-t border-gold/30 bg-ink2 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5" style="touch-action: pan-y;">
+      <div class="mx-auto mb-4 h-1 w-10 rounded-full bg-gold/30"></div>
+      <div id="historyBody"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 牌面放大弹层 ==================== -->
+  <div id="zoomWrap" class="fixed inset-0 z-[70] hidden">
+    <div id="zoomMask" class="absolute inset-0 bg-black/80 backdrop-blur-md"></div>
+    <div class="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-6 py-[calc(1rem+env(safe-area-inset-top))]">
+      <button id="zoomClose" class="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] flex h-10 w-10 items-center justify-center rounded-full border border-gold/40 bg-ink2/80 text-xl leading-none text-goldl transition active:scale-95" aria-label="关闭">✕</button>
+      <img id="zoomImg" src="" alt="" class="rounded-2xl border border-gold/50 object-cover shadow-glow">
+      <div class="w-full max-w-[380px] overflow-y-auto text-center" style="max-height: 44dvh;">
+        <p id="zoomCn" class="serif text-2xl tracking-[.2em] text-goldl"></p>
+        <p id="zoomEn" class="mt-0.5 text-[11px] tracking-[.2em] text-mist"></p>
+        <span id="zoomBadge" class="mt-2 inline-block rounded-full border px-3 py-0.5 text-xs"></span>
+        <div id="zoomKw" class="mt-3 flex flex-wrap justify-center gap-1.5"></div>
+        <p id="zoomText" class="mt-3 text-sm leading-6 text-goldl/85"></p>
+      </div>
     </div>
   </div>
 
@@ -255,7 +292,7 @@
       // setPointerCapture 会把 click 事件的 target 变为捕获元素（stage），
       // 导致按钮的 click 监听永远收不到事件（表现为"点击无反应"）。
       const t = e.target;
-      const isInteractive = t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement || t instanceof HTMLTextAreaElement || t instanceof HTMLInputElement;
+      const isInteractive = t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement || t instanceof HTMLTextAreaElement || t instanceof HTMLInputElement || (t.closest && t.closest('[data-zoom]'));
       if (!isInteractive) {
         try { stage.setPointerCapture(e.pointerId); } catch {}
       }
@@ -333,6 +370,7 @@
           </div>
           <textarea id="qInput" rows="4" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
             class="w-full resize-none rounded-2xl border border-gold/30 bg-ink2/80 p-4 text-sm leading-6 text-goldl outline-none transition focus:border-gold/70"></textarea>
+          <p class="text-[11px] text-mist">今日已问 ${todayCount()} 个问题</p>
           <div class="w-full">
             <button id="btnQGo" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">确认 · 开始抽牌</button>
           </div>
@@ -354,6 +392,9 @@
       if (!question) return;
       const rec = { date: todayStr(), mode: mode, question: question, cards: picked.map(p => ({ idx: p.idx, reversed: p.reversed })) };
       storeSet(Q_KEY(question), JSON.stringify(rec));
+      const d = new Date();
+      const p2 = n => String(n).padStart(2, '0');
+      pushHistory({ id: Date.now(), date: rec.date, time: `${p2(d.getHours())}:${p2(d.getMinutes())}`, mode: mode, question: question, cards: rec.cards, reading: '' });
     }
 
     function confirmQuestion() {
@@ -364,9 +405,13 @@
       if (rec) {
         mode = rec.mode || 'daily';
         picked = (rec.cards || []).map(c => ({ idx: c.idx, reversed: !!c.reversed }));
-        showToast('该问题今日已抽取过');
+        showToast('该问题今天已问过，展示之前的结果');
         renderResult(true);
       } else {
+        const prev = findSameQuestion(q);
+        if (prev && prev.date !== todayStr()) {
+          showToast(`这个问题之前问过（${daysAgo(prev.date)} 天前），结果在历史记录里`);
+        }
         startShuffle();
       }
     }
@@ -499,7 +544,7 @@
           <div class="card3d relative ${size}" style="perspective: 1200px;">
             <div class="face shadow-card"><img src="${BACK}" alt="牌背" draggable="false" class="h-full w-full object-cover"></div>
             <div class="face front shadow-glow ${big ? 'card-face-big' : 'card-face-small'}">
-              <img src="${IMG(card.slug)}" alt="${card.cn}" draggable="false" class="h-full w-full object-cover ${p.reversed ? 'reversed' : ''}">
+              <img src="${IMG(card.slug)}" alt="${card.cn}" draggable="false" data-zoom="${p.idx}" data-rev="${p.reversed ? 1 : 0}" class="h-full w-full cursor-pointer object-cover ${p.reversed ? 'reversed' : ''}">
               <div class="card-text">
                 <div class="card-text-top">
                   <span class="card-text-num">${card.num}</span>
@@ -529,7 +574,7 @@
             const c = DECK[p.idx];
             return `
             <div class="rise-in flex gap-4" style="animation-delay:${k * .12}s">
-              <img src="${IMG(c.slug)}" alt="${c.cn}" class="h-40 w-[6.7rem] shrink-0 rounded-xl border border-gold/40 object-cover shadow-card ${p.reversed ? 'rotate-180' : ''}">
+              <img src="${IMG(c.slug)}" alt="${c.cn}" data-zoom="${p.idx}" data-rev="${p.reversed ? 1 : 0}" class="h-40 w-[6.7rem] shrink-0 cursor-pointer rounded-xl border border-gold/40 object-cover shadow-card ${p.reversed ? 'rotate-180' : ''}">
               <div class="min-w-0 flex-1">
                 <p class="text-[10px] tracking-[.3em] text-mist">${labels[k]} ${isReplay ? '· 今日已抽取' : ''}</p>
                 <h3 class="serif mt-1 text-xl tracking-widest text-goldl">${c.cn}
@@ -653,6 +698,7 @@
         });
         const data = await res.json();
         if (!res.ok || data.code !== 0) throw new Error(data.msg || '解读失败');
+        updateHistoryReading(q, data.text);
         showReading(data.text);
       } catch (err) {
         $('#readBody').innerHTML = `
@@ -704,6 +750,155 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
     }
+
+    /* ==================== F11 历史记录 ==================== */
+    const HIST_KEY = 'sweetheart-tarot-history';
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch (e) { return []; }
+    }
+    function setHistory(arr) {
+      try { localStorage.setItem(HIST_KEY, JSON.stringify(arr)); } catch (e) {}
+    }
+    function pushHistory(rec) {
+      const arr = getHistory();
+      arr.push(rec);
+      setHistory(arr);
+    }
+    function todayCount() {
+      return getHistory().filter(r => r.date === todayStr()).length;
+    }
+    function findSameQuestion(q) {
+      const arr = getHistory();
+      for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i].question === q) return arr[i];
+      }
+      return null;
+    }
+    function daysAgo(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      return Math.max(0, Math.round((now.getTime() - d.getTime()) / 86400000));
+    }
+    function updateHistoryReading(q, text) {
+      if (!q) return;
+      const arr = getHistory();
+      for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i].question === q && !arr[i].reading) {
+          arr[i].reading = text;
+          setHistory(arr);
+          return;
+        }
+      }
+    }
+
+    function historyItemHTML(r) {
+      const cards = (r.cards || []).map(c => {
+        const cd = DECK[c.idx];
+        if (!cd) return '';
+        return `
+          <div class="shrink-0 text-center">
+            <img src="${IMG(cd.slug)}" alt="${cd.cn}" class="h-16 w-11 rounded-md border border-gold/40 object-cover ${c.reversed ? 'rotate-180' : ''}">
+            <p class="mt-1 text-[10px] leading-none text-mist">${cd.cn}</p>
+            <span class="mt-0.5 inline-block text-[9px] ${c.reversed ? 'text-purple-300' : 'text-goldl'}">${c.reversed ? '逆位' : '正位'}</span>
+          </div>`;
+      }).join('');
+      const hasReading = !!r.reading;
+      return `
+        <div class="history-item rounded-2xl border border-gold/20 bg-ink/50 p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] tracking-wider text-mist">${r.date} · ${r.time}</span>
+            <span class="text-[10px] text-gold/80">${r.mode === 'trio' ? '圣三角牌阵' : '每日一抽'}</span>
+          </div>
+          <p class="clamp-2 mt-1.5 text-[13px] leading-5 text-goldl">${escapeHtml(r.question)}</p>
+          <div class="mt-3 flex gap-2 overflow-x-auto pb-1">${cards}</div>
+          <div class="reading-preview mt-3 text-[12px] leading-6 text-mist">
+            ${hasReading ? `<div class="clamp-2">${escapeHtml(r.reading)}</div>` : '<span class="text-mist/60">未解读</span>'}
+          </div>
+          <div class="history-detail hidden mt-3 border-t border-gold/10 pt-3 text-[13px] leading-7 text-goldl/85">${hasReading ? renderReading(r.reading) : '<span class="text-mist/60">还没有解读记录</span>'}</div>
+        </div>`;
+    }
+
+    function renderHistory() {
+      const arr = getHistory().slice().reverse();
+      const total = arr.length;
+      $('#historyBody').innerHTML = `
+        <div class="flex items-center justify-between">
+          <p class="text-[10px] tracking-[.3em] text-mist">TAROT HISTORY</p>
+          <span class="text-[11px] text-mist">共 ${total} 条记录</span>
+        </div>
+        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">历史记录</h3>
+        ${total ? `
+        <div class="mt-4 space-y-3">${arr.map(historyItemHTML).join('')}</div>
+        <div class="mt-5 flex gap-3">
+          <button id="btnClearHistory" class="flex-1 rounded-2xl border border-red-400/40 bg-red-400/10 py-3 text-sm tracking-[.2em] text-red-300 transition active:scale-95">清空记录</button>
+          <button id="btnHistoryClose" class="flex-1 rounded-2xl border border-gold/40 bg-gold/10 py-3 text-sm tracking-[.2em] text-goldl transition active:scale-95">关闭</button>
+        </div>` : `
+        <p class="py-12 text-center text-sm text-mist">还没有记录 · 快去抽一张牌吧</p>
+        <button id="btnHistoryClose" class="mt-4 w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-sm tracking-[.2em] text-goldl transition active:scale-95">关闭</button>`}`;
+      const closeBtn = $('#btnHistoryClose');
+      if (closeBtn) closeBtn.addEventListener('click', closeHistory);
+      const clearBtn = $('#btnClearHistory');
+      if (clearBtn) clearBtn.addEventListener('click', clearHistory);
+    }
+
+    function openHistory() {
+      renderHistory();
+      $('#historyWrap').classList.remove('hidden');
+    }
+    function closeHistory() { $('#historyWrap').classList.add('hidden'); }
+    function clearHistory() {
+      if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+        setHistory([]);
+        renderHistory();
+      }
+    }
+    $('#btnHistory').addEventListener('click', openHistory);
+    $('#historyMask').addEventListener('click', closeHistory);
+    $('#historyBody').addEventListener('click', e => {
+      const item = e.target.closest('.history-item');
+      if (!item) return;
+      const detail = item.querySelector('.history-detail');
+      const preview = item.querySelector('.reading-preview');
+      if (!detail) return;
+      const willShow = detail.classList.contains('hidden');
+      detail.classList.toggle('hidden', !willShow);
+      if (preview) preview.classList.toggle('hidden', willShow);
+    });
+
+    /* ==================== F13 牌面放大 ==================== */
+    function openZoom(idx, reversed) {
+      const c = DECK[idx];
+      if (!c) return;
+      const img = $('#zoomImg');
+      img.src = IMG(c.slug);
+      img.alt = c.cn;
+      img.style.transform = reversed ? 'rotate(180deg)' : '';
+      $('#zoomCn').textContent = c.cn;
+      $('#zoomEn').textContent = c.en;
+      const badge = $('#zoomBadge');
+      badge.textContent = reversed ? '逆位' : '正位';
+      badge.className = 'mt-2 inline-block rounded-full border px-3 py-0.5 text-xs ' + (reversed ? 'border-purple-400/40 text-purple-300' : 'border-gold/50 text-goldl');
+      $('#zoomKw').innerHTML = c.kw.map(w => `<span class="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] text-gold/90">${w}</span>`).join('');
+      $('#zoomText').textContent = reversed ? c.rev : c.up;
+      $('#zoomWrap').classList.remove('hidden');
+    }
+    function closeZoom() { $('#zoomWrap').classList.add('hidden'); }
+    $('#zoomMask').addEventListener('click', closeZoom);
+    $('#zoomClose').addEventListener('click', closeZoom);
+
+    stage.addEventListener('click', e => {
+      const t = e.target.closest('[data-zoom]');
+      if (!t) return;
+      const card3d = t.closest('.card3d');
+      if (card3d && !card3d.classList.contains('flipped')) return;
+      openZoom(+t.dataset.zoom, t.dataset.rev === '1');
+    });
+    $('#sheetBody').addEventListener('click', e => {
+      const t = e.target.closest('[data-zoom]');
+      if (!t) return;
+      openZoom(+t.dataset.zoom, t.dataset.rev === '1');
+    });
 
     /* ==================== 启动 ==================== */
     renderIntro();
