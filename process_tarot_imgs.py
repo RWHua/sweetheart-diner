@@ -1,4 +1,4 @@
-"""处理塔罗牌图片：裁顶部文字条 -> 512x512 -> webp q82。
+"""处理塔罗牌图片：裁顶部文字条 -> 512x768(2:3) / 512x512(女祭司) -> webp q82。
 
 用法：python process_tarot_imgs.py
 """
@@ -38,16 +38,17 @@ OTHER_SLUGS = [
 TOP_CROP_RATIO = 0.12
 PRIESTESS_CROP_RATIO = 0.20
 TARGET_SIZE = (512, 512)
+TARGET_SIZE_RECT = (512, 768)
 WEBP_QUALITY = 82
 WEBP_METHOD = 6
 
 
-def process(src_path, dst_path, crop_ratio=TOP_CROP_RATIO):
+def process(src_path, dst_path, crop_ratio=TOP_CROP_RATIO, target_size=TARGET_SIZE):
     img = Image.open(src_path).convert("RGB")
     w, h = img.size
     top = int(h * crop_ratio)
     img = img.crop((0, top, w, h))
-    img = img.resize(TARGET_SIZE, Image.LANCZOS)
+    img = img.resize(target_size, Image.LANCZOS)
     img.save(dst_path, "WEBP", quality=WEBP_QUALITY, method=WEBP_METHOD)
     return os.path.getsize(dst_path) // 1024
 
@@ -64,7 +65,7 @@ def main():
     for slug in OTHER_SLUGS:
         src = os.path.join(SRC_DIR, slug + ".png")
         dst = os.path.join(OUT_DIR, slug + ".webp")
-        size_kb = process(src, dst)
+        size_kb = process(src, dst, target_size=TARGET_SIZE_RECT)
         print("OK {} {}KB".format(slug, size_kb))
         count += 1
 

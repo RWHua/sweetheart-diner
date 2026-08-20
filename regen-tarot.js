@@ -9,11 +9,13 @@ const SUFFIX = [
   'intricate golden vine border frame, deep navy blue night background',
   'vintage engraving linework, decorative mystical style, soft ambient light',
   'no text, no letters, no words, no numbers, no typography',
-  'centered vertical composition, square format'
+  'centered vertical composition, tall 2:3 portrait format'
 ].join(', ');
 
 const cards = [
-  { slug: '15-devil', name: 'The Devil', elements: 'horned devil sitting on a stone pedestal, LARGE INVERTED PENTAGRAM floating above the devils head between the horns (five-pointed star with the point facing DOWNWARD), same inverted pentagram symbol on the devils forehead, devil holding a torch with bright flame in one hand, chained naked man and woman sitting below' }
+  { slug: '10-wheel', name: 'Wheel of Fortune', elements: 'wheel of fortune with geometric symbols, LARGE sphinx with human head and lion body sitting on top of the wheel, four winged creatures in clouds around, no letters' },
+  { slug: '15-devil', name: 'The Devil', elements: 'horned devil on stone pedestal, a star with exactly five points and one point facing DOWNWARD floating above the devils head, same five-pointed star pointing down on the forehead, devil holding a torch, two chained figures seated below' },
+  { slug: '21-world', name: 'The World', elements: 'dancing woman completely encircled by an oval wreath of green laurel leaves, four corners contain four creatures: eagle top-left, lion top-right, ox bottom-left, human-faced angel bottom-right' }
 ];
 
 async function generateOnce(card) {
@@ -21,7 +23,7 @@ async function generateOnce(card) {
   const res = await fetch(API, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'volcengine/doubao-seedream-5.0-lite', prompt, n: 1, size: '1024x1024', response_format: 'url' })
+    body: JSON.stringify({ model: 'volcengine/doubao-seedream-5.0-lite', prompt, n: 1, size: '1600x2400', response_format: 'url' })
   });
   if (res.status === 502) throw new Error('HTTP 502');
   const data = await res.json();

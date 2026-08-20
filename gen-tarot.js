@@ -9,7 +9,7 @@ const SUFFIX = [
   'intricate golden vine border frame, deep navy blue night background',
   'vintage engraving linework, decorative mystical style, soft ambient light',
   'no text, no letters, no words, no numbers, no typography',
-  'centered vertical composition, square format'
+  'centered vertical composition, tall 2:3 portrait format'
 ].join(', ');
 
 const cards = [
@@ -27,7 +27,7 @@ const cards = [
   { slug: '12-hanged-man', name: 'The Hanged Man', elements: 'man hanging upside down from T-shaped tree, halo around head, calm expression' },
   { slug: '13-death', name: 'Death', elements: 'death knight on white horse, black banner with white rose, distant sun between towers' },
   { slug: '14-temperance', name: 'Temperance', elements: 'angel pouring water between two cups, one foot in water one on land, path to distant hills' },
-  { slug: '15-devil', name: 'The Devil', elements: 'devil on pedestal, chained man and woman, inverted pentagram, torch' },
+  { slug: '15-devil', name: 'The Devil', elements: 'horned devil sitting on stone pedestal, LARGE inverted pentagram (five-pointed star pointing DOWNWARD) floating above the devils head between the horns, inverted pentagram on forehead, devil holding torch with flame, chained naked man and woman below' },
   { slug: '16-tower', name: 'The Tower', elements: 'tower struck by lightning, two figures falling, crown blown off, fire sparks' },
   { slug: '17-star', name: 'The Star', elements: 'naked woman kneeling by pond, pouring water from two jugs, large eight-pointed star' },
   { slug: '18-moon', name: 'The Moon', elements: 'moon with face, dog and wolf howling, crayfish emerging from water, two towers on path' },
@@ -41,7 +41,7 @@ async function generateOnce(card) {
   const res = await fetch(API, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'volcengine/doubao-seedream-5.0-lite', prompt, n: 1, size: '1024x1024', response_format: 'url' })
+    body: JSON.stringify({ model: 'volcengine/doubao-seedream-5.0-lite', prompt, n: 1, size: '1600x2400', response_format: 'url' })
   });
   if (res.status === 502) throw new Error('HTTP 502');
   const data = await res.json();
