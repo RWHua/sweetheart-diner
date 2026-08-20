@@ -124,7 +124,10 @@
 
     <!-- ==================== 顶栏 ==================== -->
     <header class="flex items-center justify-between px-5 pb-2 pt-[calc(1rem+env(safe-area-inset-top))]">
-      <a href="./index.html" class="flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-ink2/80 text-lg text-gold transition active:scale-95" aria-label="返回首页">←</a>
+      <div class="flex h-10 w-10 items-center justify-center">
+        <a href="./index.html" id="btnHeaderHome" class="flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-ink2/80 text-lg text-gold transition active:scale-95" aria-label="返回首页">←</a>
+        <button id="btnHeaderBack" class="h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-ink2/80 text-lg text-gold transition active:scale-95" style="display:none" aria-label="返回选择玩法">←</button>
+      </div>
       <div class="text-center">
         <p class="serif text-[10px] tracking-[.35em] text-mist">DAILY TAROT</p>
         <h1 class="serif mt-0.5 text-lg tracking-[.2em] text-goldl">每日塔罗</h1>
@@ -282,9 +285,18 @@
     stage.addEventListener('dblclick', e => e.preventDefault());
 
     /* ==================== 页面状态：入口（选玩法） ==================== */
+    function setQuestionNav(active) {
+      const home = $('#btnHeaderHome'), back = $('#btnHeaderBack');
+      if (home) home.style.display = active ? 'none' : 'flex';
+      if (back) back.style.display = active ? 'flex' : 'none';
+    }
+    $('#btnHeaderBack').addEventListener('click', renderIntro);
+
     function renderIntro() {
       busy = false;
       question = '';
+      picked = [];
+      setQuestionNav(false);
       gesture.onTap = gesture.onPan = gesture.onPanEnd = null;
       hint.textContent = '先选一种玩法 · 再向塔罗提问';
       stage.innerHTML = `
@@ -310,6 +322,7 @@
     /* ==================== 问题输入 ==================== */
     function renderQuestion() {
       busy = false;
+      setQuestionNav(true);
       gesture.onTap = gesture.onPan = gesture.onPanEnd = null;
       hint.textContent = '把心里的问题写下来 · 同一问题每天只抽一次';
       stage.innerHTML = `
@@ -320,12 +333,10 @@
           </div>
           <textarea id="qInput" rows="4" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
             class="w-full resize-none rounded-2xl border border-gold/30 bg-ink2/80 p-4 text-sm leading-6 text-goldl outline-none transition focus:border-gold/70"></textarea>
-          <div class="w-full space-y-3">
+          <div class="w-full">
             <button id="btnQGo" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">确认 · 开始抽牌</button>
-            <button id="btnQBack" class="w-full rounded-2xl border border-gold/25 bg-ink2/60 py-3.5 text-sm tracking-[.2em] text-mist transition active:scale-95">返回选择玩法</button>
           </div>
         </div>`;
-      $('#btnQBack').addEventListener('click', renderIntro);
       $('#btnQGo').addEventListener('click', confirmQuestion);
       setTimeout(() => $('#qInput').focus(), 80);
     }
@@ -363,6 +374,7 @@
     /* ==================== 洗牌 ==================== */
     function startShuffle() {
       busy = true;
+      setQuestionNav(false);
       hint.textContent = '洗牌中 · 心里想着你的问题…';
       stage.innerHTML = `
         <div class="flex h-full items-center justify-center">
@@ -436,20 +448,27 @@
       picked.push({ idx: slot, reversed });
 
       const card = DECK[slot];
-      hint.textContent = '✦ 感应完成 ✦';
 
       // 隐藏扇形，展示居中翻牌
       const need = mode === 'trio' ? 3 : 1;
       const last = picked.length === need;
       if (last) saveRecord();
+      hint.textContent = last ? '点牌面下方按钮可查看结果/返回' : '✦ 感应完成 ✦';
 
       stage.innerHTML = `
-        <div class="flex h-full items-center justify-center" style="perspective: 1200px;">
-          ${last && mode === 'trio'
-            ? `<div class="flex items-end justify-center gap-3 px-4">
-                ${picked.map((p, k) => revealCardHTML(p, k, 'h-48 w-32')).join('')}
-              </div>`
-            : revealCardHTML(picked[picked.length - 1], 0, 'h-72 w-48')}
+        <div class="flex h-full flex-col items-center justify-center gap-7 px-4">
+          <div style="perspective: 1200px;">
+            ${last && mode === 'trio'
+              ? `<div class="flex items-end justify-center gap-3">
+                  ${picked.map((p, k) => revealCardHTML(p, k, 'h-48 w-32')).join('')}
+                </div>`
+              : revealCardHTML(picked[picked.length - 1], 0, 'h-72 w-48')}
+          </div>
+          ${last ? `
+          <div class="flex items-center gap-3">
+            <button id="btnViewResult" class="rounded-2xl border border-gold/40 bg-gold/10 px-6 py-3 text-sm tracking-[.2em] text-goldl transition active:scale-95">查看结果</button>
+            <button id="btnBackHome" class="rounded-2xl border border-gold/25 bg-ink2/60 px-6 py-3 text-sm tracking-[.2em] text-mist transition active:scale-95">返回</button>
+          </div>` : ''}
         </div>`;
 
       // 依次翻牌
@@ -459,8 +478,16 @@
 
       const totalFlip = 450 + (last ? picked.length - 1 : 0) * 550 + 1100;
       setTimeout(() => {
-        if (last) renderResult(false);
-        else renderFan();
+        if (last) {
+          renderResult(false);
+          gesture.onTap = gesture.onPan = gesture.onPanEnd = null;
+          const vb = $('#btnViewResult');
+          if (vb) vb.addEventListener('click', openSheet);
+          const bb = $('#btnBackHome');
+          if (bb) bb.addEventListener('click', renderIntro);
+        } else {
+          renderFan();
+        }
       }, totalFlip);
     }
 
@@ -490,7 +517,6 @@
     let lastCards = [];          // 最近一次抽取的牌面数据（供 AI 解读）
 
     function renderResult(isReplay) {
-      hint.textContent = '';
       const labels = mode === 'trio' ? ['过去', '现在', '未来'] : ['今日牌面'];
       lastCards = picked.map((p, k) => {
         const c = DECK[p.idx];
@@ -523,22 +549,28 @@
         <div class="mt-7 space-y-3">
           <button id="btnInterpret" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">解读牌意</button>
           ${mode === 'trio' ? '<button id="btnAgain" class="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3.5 text-sm tracking-[.2em] text-goldl transition active:scale-95">再抽一次</button>' : ''}
+          <button id="btnTarotHome" class="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3.5 text-sm tracking-[.2em] text-goldl transition active:scale-95">返回塔罗首页</button>
           <a href="./index.html" class="block w-full rounded-2xl border border-gold/25 bg-ink/60 py-3.5 text-center text-sm tracking-[.2em] text-mist transition active:scale-95">返回点餐首页</a>
           <p class="pt-1 text-center text-[10px] tracking-widest text-mist/60">牌意仅供娱乐与灵感 · 真正的答案在你心里</p>
         </div>`;
 
-      $('#sheetWrap').classList.remove('hidden');
-      $('#sheet').classList.add('rise-in');
+      openSheet();
       const again = $('#btnAgain');
       if (again) again.addEventListener('click', () => { closeSheet(); picked = []; renderIntro(); });
       $('#btnInterpret').addEventListener('click', openInterpret);
+      $('#btnTarotHome').addEventListener('click', () => { closeSheet(); renderIntro(); });
+    }
+
+    function openSheet() {
+      $('#sheetWrap').classList.remove('hidden');
+      $('#sheet').classList.add('rise-in');
     }
 
     function closeSheet() {
       $('#sheetWrap').classList.add('hidden');
       $('#sheet').classList.remove('rise-in');
     }
-    $('#sheetMask').addEventListener('click', () => { closeSheet(); picked = []; renderIntro(); });
+    $('#sheetMask').addEventListener('click', closeSheet);
 
     /* ==================== AI 解读（DeepSeek） ====================
        Key 只存于服务端环境变量，前端只调用 /api/interpret-tarot */
