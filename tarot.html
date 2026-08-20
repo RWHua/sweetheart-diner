@@ -47,6 +47,25 @@
     .card3d .front { transform: rotateY(180deg); }
     .card3d .face img.reversed { transform: rotate(180deg); }
 
+    /* ---------- 牌面 CSS 叠字（方案 A：文字层与图片层分离） ---------- */
+    .card-text {
+      position: absolute; inset: 0; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      padding: .55rem .4rem; pointer-events: none; text-align: center;
+      font-family: Georgia, 'Times New Roman', serif; color: #e8c76a;
+      text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 8px rgba(0,0,0,.7);
+    }
+    .card-text-top { display: flex; flex-direction: column; align-items: center; gap: .12rem; line-height: 1.15; }
+    .card-text-num { letter-spacing: .18em; font-weight: 700; }
+    .card-text-en { letter-spacing: .14em; text-transform: uppercase; opacity: .94; }
+    .card-text-cn { letter-spacing: .28em; text-indent: .28em; font-weight: 700; }
+    .card-face-big .card-text-num { font-size: 1.05rem; }
+    .card-face-big .card-text-en { font-size: .5rem; }
+    .card-face-big .card-text-cn { font-size: 1.5rem; }
+    .card-face-small .card-text-num { font-size: .7rem; }
+    .card-face-small .card-text-en { font-size: .38rem; }
+    .card-face-small .card-text-cn { font-size: .95rem; }
+
     /* ---------- 洗牌动画 ---------- */
     @keyframes shuffleL {
       0%,100% { transform: translateX(0) rotate(0deg); }
@@ -74,6 +93,24 @@
 
     @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: .9; } }
     .star { position: absolute; border-radius: 9999px; background: #e8c76a; animation: twinkle 3s ease-in-out infinite; }
+
+    /* ---------- 轻量 toast（底部中间暗色圆角小条） ---------- */
+    #toast {
+      position: fixed; left: 50%; bottom: 12%;
+      transform: translate(-50%, 8px);
+      z-index: 60;
+      max-width: 86%;
+      padding: .6rem 1.2rem;
+      border-radius: 9999px;
+      background: rgba(22, 18, 38, .94);
+      border: 1px solid rgba(201, 162, 39, .35);
+      color: #e8c76a;
+      font-size: 12px; letter-spacing: .05em; text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,.5);
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease, transform .3s ease;
+    }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
   </style>
 </head>
 
@@ -151,8 +188,20 @@
     const stage = $('#stage'), hint = $('#hint');
     const IMG = slug => `./images/tarot/${slug}.webp`;
     const BACK = IMG('back');
-    const DAILY_KEY = 'sweetheart-tarot-daily';
-    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const todayStr = () => {
+      const d = new Date();
+      const p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    };
+
+    /* djb2 字符串哈希：稳定、无依赖，用于按问题维度锁定 */
+    function djb2(str) {
+      let h = 5381;
+      const s = String(str);
+      for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+      return h.toString(36);
+    }
+    const Q_KEY = q => 'sweetheart-tarot-q-' + djb2(q);
 
     /* ==================== 星空背景 ==================== */
     (function stars() {
@@ -175,6 +224,7 @@
     let mode = 'daily';          // daily | trio
     let picked = [];             // { idx, reversed }
     let busy = false;
+    let question = '';           // 本次抽牌的问题（供锁定键与解读弹层使用）
 
     /* ==================== localStorage 安全读写 ====================
        file:// 打开 / 隐私模式 / 存储被禁用时 setItem 会抛异常，
@@ -201,7 +251,7 @@
       // setPointerCapture 会把 click 事件的 target 变为捕获元素（stage），
       // 导致按钮的 click 监听永远收不到事件（表现为"点击无反应"）。
       const t = e.target;
-      const isInteractive = t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement;
+      const isInteractive = t instanceof HTMLButtonElement || t instanceof HTMLAnchorElement || t instanceof HTMLTextAreaElement || t instanceof HTMLInputElement;
       if (!isInteractive) {
         try { stage.setPointerCapture(e.pointerId); } catch {}
       }
@@ -230,12 +280,12 @@
     stage.addEventListener('contextmenu', e => e.preventDefault());
     stage.addEventListener('dblclick', e => e.preventDefault());
 
-    /* ==================== 页面状态：入口 ==================== */
+    /* ==================== 页面状态：入口（选玩法） ==================== */
     function renderIntro() {
       busy = false;
+      question = '';
       gesture.onTap = gesture.onPan = gesture.onPanEnd = null;
-      const daily = getDaily();
-      hint.textContent = '静心默念你的问题 · 同一问题一天只问一次';
+      hint.textContent = '先选一种玩法 · 再向塔罗提问';
       stage.innerHTML = `
         <div class="flex h-full flex-col items-center justify-center gap-8 px-6">
           <div class="floaty relative h-56 w-40">
@@ -245,28 +295,68 @@
           </div>
           <div class="w-full space-y-3">
             <button id="btnDaily" class="w-full rounded-2xl border border-gold/50 bg-gold/15 py-4 text-sm font-bold tracking-[.2em] text-goldl transition active:scale-95">
-              ${daily ? '查看今日牌面 ✦ 已抽取' : '每日一抽 ✦ 今日运势'}
+              每日一抽 ✦ 今日运势
             </button>
             <button id="btnTrio" class="w-full rounded-2xl border border-gold/25 bg-ink2/60 py-4 text-sm tracking-[.2em] text-mist transition active:scale-95">
               圣三角牌阵 ✦ 过去 · 现在 · 未来
             </button>
           </div>
         </div>`;
-      $('#btnDaily').addEventListener('click', () => {
-        mode = 'daily';
-        const d = getDaily();
-        if (d) { picked = [{ idx: d.idx, reversed: d.reversed }]; renderResult(true); }
-        else startShuffle();
-      });
-      $('#btnTrio').addEventListener('click', () => { mode = 'trio'; startShuffle(); });
+      $('#btnDaily').addEventListener('click', () => { mode = 'daily'; renderQuestion(); });
+      $('#btnTrio').addEventListener('click', () => { mode = 'trio'; renderQuestion(); });
     }
 
-    function getDaily() {
-      const raw = storeGet(DAILY_KEY);
+    /* ==================== 问题输入 ==================== */
+    function renderQuestion() {
+      busy = false;
+      gesture.onTap = gesture.onPan = gesture.onPanEnd = null;
+      hint.textContent = '把心里的问题写下来 · 同一问题每天只抽一次';
+      stage.innerHTML = `
+        <div class="flex h-full flex-col justify-center gap-6 px-6">
+          <div>
+            <p class="text-[10px] tracking-[.3em] text-mist">${mode === 'daily' ? '每日一抽 · 今日运势' : '圣三角牌阵 · 过去·现在·未来'}</p>
+            <h2 class="serif mt-1 text-xl tracking-[.2em] text-goldl">${mode === 'daily' ? '今天想问塔罗什么？' : '把心里的问题交给三张牌'}</h2>
+          </div>
+          <textarea id="qInput" rows="4" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
+            class="w-full resize-none rounded-2xl border border-gold/30 bg-ink2/80 p-4 text-sm leading-6 text-goldl outline-none transition focus:border-gold/70"></textarea>
+          <div class="w-full space-y-3">
+            <button id="btnQGo" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">确认 · 开始抽牌</button>
+            <button id="btnQBack" class="w-full rounded-2xl border border-gold/25 bg-ink2/60 py-3.5 text-sm tracking-[.2em] text-mist transition active:scale-95">返回选择玩法</button>
+          </div>
+        </div>`;
+      $('#btnQBack').addEventListener('click', renderIntro);
+      $('#btnQGo').addEventListener('click', confirmQuestion);
+      setTimeout(() => $('#qInput').focus(), 80);
+    }
+
+    /* ==================== 每日锁定（按问题维度） ==================== */
+    function getLocked(q) {
+      const raw = storeGet(Q_KEY(q));
       try {
-        const d = raw ? JSON.parse(raw) : null;
-        return d && d.date === todayStr() ? d : null;
+        const rec = raw ? JSON.parse(raw) : null;
+        return rec && rec.date === todayStr() ? rec : null;
       } catch { return null; }
+    }
+
+    function saveRecord() {
+      if (!question) return;
+      const rec = { date: todayStr(), mode: mode, question: question, cards: picked.map(p => ({ idx: p.idx, reversed: p.reversed })) };
+      storeSet(Q_KEY(question), JSON.stringify(rec));
+    }
+
+    function confirmQuestion() {
+      const q = $('#qInput').value.trim();
+      if (!q) { $('#qInput').focus(); hint.textContent = '先写下你的问题吧 · 空问题无法抽牌'; return; }
+      question = q;
+      const rec = getLocked(q);
+      if (rec) {
+        mode = rec.mode || 'daily';
+        picked = (rec.cards || []).map(c => ({ idx: c.idx, reversed: !!c.reversed }));
+        showToast('该问题今日已抽取过');
+        renderResult(true);
+      } else {
+        startShuffle();
+      }
     }
 
     /* ==================== 洗牌 ==================== */
@@ -344,16 +434,13 @@
       const reversed = Math.random() < 0.5;
       picked.push({ idx: slot, reversed });
 
-      if (mode === 'daily') {
-        storeSet(DAILY_KEY, JSON.stringify({ date: todayStr(), idx: slot, reversed }));
-      }
-
       const card = DECK[slot];
       hint.textContent = '✦ 感应完成 ✦';
 
       // 隐藏扇形，展示居中翻牌
       const need = mode === 'trio' ? 3 : 1;
       const last = picked.length === need;
+      if (last) saveRecord();
 
       stage.innerHTML = `
         <div class="flex h-full items-center justify-center" style="perspective: 1200px;">
@@ -378,11 +465,21 @@
 
     function revealCardHTML(p, k, size) {
       const card = DECK[p.idx];
+      const big = size.indexOf('h-72') !== -1;
       return `
         <div class="text-center">
           <div class="card3d relative ${size}" style="perspective: 1200px;">
             <div class="face shadow-card"><img src="${BACK}" alt="牌背" draggable="false" class="h-full w-full object-cover"></div>
-            <div class="face front shadow-glow"><img src="${IMG(card.slug)}" alt="${card.cn}" draggable="false" class="h-full w-full object-cover ${p.reversed ? 'reversed' : ''}"></div>
+            <div class="face front shadow-glow ${big ? 'card-face-big' : 'card-face-small'}">
+              <img src="${IMG(card.slug)}" alt="${card.cn}" draggable="false" class="h-full w-full object-cover ${p.reversed ? 'reversed' : ''}">
+              <div class="card-text">
+                <div class="card-text-top">
+                  <span class="card-text-num">${card.num}</span>
+                  <span class="card-text-en">${card.en}</span>
+                </div>
+                <span class="card-text-cn">${card.cn}</span>
+              </div>
+            </div>
           </div>
           ${mode === 'trio' ? `<p class="mt-2 text-[10px] tracking-[.3em] text-mist">${['过去','现在','未来'][k]}</p>` : ''}
         </div>`;
@@ -423,7 +520,7 @@
           }).join('')}
         </div>
         <div class="mt-7 space-y-3">
-          <button id="btnInterpret" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">🔮 解读牌意</button>
+          <button id="btnInterpret" class="w-full rounded-2xl bg-gold/90 py-3.5 text-sm font-bold tracking-[.2em] text-ink transition active:scale-95">解读牌意</button>
           ${mode === 'trio' ? '<button id="btnAgain" class="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3.5 text-sm tracking-[.2em] text-goldl transition active:scale-95">再抽一次</button>' : ''}
           <a href="./index.html" class="block w-full rounded-2xl border border-gold/25 bg-ink/60 py-3.5 text-center text-sm tracking-[.2em] text-mist transition active:scale-95">返回点餐首页</a>
           <p class="pt-1 text-center text-[10px] tracking-widest text-mist/60">牌意仅供娱乐与灵感 · 真正的答案在你心里</p>
@@ -450,7 +547,7 @@
         <h3 class="serif mt-1 text-lg tracking-widest text-goldl">向塔罗提个问题</h3>
         <p class="mt-2 text-xs leading-5 text-mist">结合你抽到的牌，告诉我想了解什么，我来为你解读。</p>
         <textarea id="readQuestion" rows="3" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
-          class="mt-4 h-24 w-full resize-none rounded-2xl border border-gold/30 bg-ink/60 p-3 text-sm text-goldl outline-none transition focus:border-gold/70"></textarea>
+          class="mt-4 h-24 w-full resize-none rounded-2xl border border-gold/30 bg-ink/60 p-3 text-sm text-goldl outline-none transition focus:border-gold/70">${escapeHtml(question || '')}</textarea>
         <div class="mt-4 flex gap-3">
           <button id="readCancel" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">取消</button>
           <button id="readGo" class="flex-1 rounded-2xl bg-gold/90 py-3 text-sm font-bold text-ink transition active:scale-95">开始解读</button>
@@ -517,6 +614,21 @@
 
     function escapeHtml(s) {
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    /* ==================== 轻量 toast ==================== */
+    let toastTimer = null;
+    function showToast(msg) {
+      let t = $('#toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
     }
 
     /* ==================== 启动 ==================== */

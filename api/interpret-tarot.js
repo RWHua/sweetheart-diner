@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
         { role: 'system', content: buildPrompt(body) }
       ],
       stream: false,
-      max_tokens: 900
+      max_tokens: 2000
     };
 
     const upstream = await fetch(DEEPSEEK_URL, {
