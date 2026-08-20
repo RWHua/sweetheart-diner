@@ -225,6 +225,7 @@
     let picked = [];             // { idx, reversed }
     let busy = false;
     let question = '';           // 本次抽牌的问题（供锁定键与解读弹层使用）
+    let readingQuestion = '';    // 解读弹层当前使用的问题文本（可在弹层内修改）
 
     /* ==================== localStorage 安全读写 ====================
        file:// 打开 / 隐私模式 / 存储被禁用时 setItem 会抛异常，
@@ -542,19 +543,58 @@
     /* ==================== AI 解读（DeepSeek） ====================
        Key 只存于服务端环境变量，前端只调用 /api/interpret-tarot */
     function openInterpret() {
+      readingQuestion = question;
+      $('#readWrap').classList.remove('hidden');
+      renderReadQuestion();
+    }
+
+    function renderReadQuestion() {
+      const hasQ = !!readingQuestion;
       $('#readBody').innerHTML = `
         <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
-        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">向塔罗提个问题</h3>
-        <p class="mt-2 text-xs leading-5 text-mist">结合你抽到的牌，告诉我想了解什么，我来为你解读。</p>
+        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">结合你抽到的牌，为你解读这个问题</h3>
+        <p class="mt-2 text-xs leading-5 text-mist">塔罗已就位，请确认或修改你的问题。</p>
+        ${hasQ ? `
+        <div class="mt-4 rounded-2xl border border-gold/30 bg-ink/60 px-4 py-4">
+          <p class="serif text-[15px] leading-7">你的问题：<span class="text-gold">『</span><span class="text-goldl">${escapeHtml(readingQuestion)}</span><span class="text-gold">』</span></p>
+        </div>
+        <div class="mt-4 flex gap-3">
+          <button id="readGo" class="flex-1 rounded-2xl bg-gold/90 py-3 text-sm font-bold text-ink transition active:scale-95">开始解读</button>
+          <button id="readEdit" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">修改问题</button>
+        </div>` : `
         <textarea id="readQuestion" rows="3" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
-          class="mt-4 h-24 w-full resize-none rounded-2xl border border-gold/30 bg-ink/60 p-3 text-sm text-goldl outline-none transition focus:border-gold/70">${escapeHtml(question || '')}</textarea>
+          class="mt-4 h-24 w-full resize-none rounded-2xl border border-gold/30 bg-ink/60 p-3 text-sm text-goldl outline-none transition focus:border-gold/70"></textarea>
         <div class="mt-4 flex gap-3">
           <button id="readCancel" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">取消</button>
           <button id="readGo" class="flex-1 rounded-2xl bg-gold/90 py-3 text-sm font-bold text-ink transition active:scale-95">开始解读</button>
-        </div>`;
-      $('#readWrap').classList.remove('hidden');
-      $('#readCancel').addEventListener('click', closeRead);
+        </div>`}`;
       $('#readGo').addEventListener('click', doInterpret);
+      if (hasQ) {
+        $('#readEdit').addEventListener('click', renderReadEdit);
+      } else {
+        $('#readCancel').addEventListener('click', closeRead);
+        setTimeout(() => $('#readQuestion').focus(), 80);
+      }
+    }
+
+    function renderReadEdit() {
+      $('#readBody').innerHTML = `
+        <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
+        <h3 class="serif mt-1 text-lg tracking-widest text-goldl">修改问题</h3>
+        <p class="mt-2 text-xs leading-5 text-mist">调整后点确认，即可重新为你解读。</p>
+        <textarea id="readQuestion" rows="3" maxlength="300" placeholder="例如：我们今天相处要注意什么？"
+          class="mt-4 h-24 w-full resize-none rounded-2xl border border-gold/30 bg-ink/60 p-3 text-sm text-goldl outline-none transition focus:border-gold/70">${escapeHtml(readingQuestion)}</textarea>
+        <div class="mt-4 flex gap-3">
+          <button id="readCancelEdit" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">取消</button>
+          <button id="readConfirmEdit" class="flex-1 rounded-2xl bg-gold/90 py-3 text-sm font-bold text-ink transition active:scale-95">确认</button>
+        </div>`;
+      $('#readCancelEdit').addEventListener('click', renderReadQuestion);
+      $('#readConfirmEdit').addEventListener('click', () => {
+        const v = $('#readQuestion').value.trim();
+        if (!v) { $('#readQuestion').focus(); return; }
+        readingQuestion = v;
+        renderReadQuestion();
+      });
       setTimeout(() => $('#readQuestion').focus(), 80);
     }
 
@@ -562,8 +602,10 @@
     $('#readMask').addEventListener('click', closeRead);
 
     async function doInterpret() {
-      const q = $('#readQuestion').value.trim();
-      if (!q) { $('#readQuestion').focus(); return; }
+      const ta = $('#readQuestion');
+      const q = ta ? ta.value.trim() : readingQuestion.trim();
+      if (!q) { if (ta) ta.focus(); return; }
+      readingQuestion = q;
       $('#readBody').innerHTML = `
         <p class="text-[10px] tracking-[.3em] text-mist">AI TAROT READING</p>
         <h3 class="serif mt-1 text-lg tracking-widest text-goldl">正在解读…</h3>
@@ -589,7 +631,7 @@
             <button id="readRetry" class="flex-1 rounded-2xl border border-gold/40 bg-gold/10 py-3 text-sm text-goldl transition active:scale-95">重试</button>
             <button id="readClose2" class="flex-1 rounded-2xl border border-gold/25 py-3 text-sm text-mist transition active:scale-95">关闭</button>
           </div>`;
-        $('#readRetry').addEventListener('click', openInterpret);
+        $('#readRetry').addEventListener('click', doInterpret);
         $('#readClose2').addEventListener('click', closeRead);
       }
     }
