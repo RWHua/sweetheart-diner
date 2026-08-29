@@ -225,6 +225,14 @@
         </div>
         <span id="sumBadge" class="text-xs text-mute bg-white/5 rounded-full px-3 py-1">SUM: 0</span>
       </div>
+      <div id="searchWrap" class="mb-3 hidden">
+        <div class="relative">
+          <input id="dishSearch" type="search" placeholder="搜菜名 / 食材 / 菜系…" autocomplete="off"
+            class="w-full h-11 rounded-xl bg-card border border-white/10 pl-10 pr-10 text-sm text-tx placeholder:text-mute/60 outline-none focus:border-prime/50 transition-colors" />
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-mute/70 text-sm pointer-events-none">🔍</span>
+          <button id="clearSearch" class="absolute right-3 top-1/2 -translate-y-1/2 text-mute/60 text-base hidden" aria-label="清空搜索">✕</button>
+        </div>
+      </div>
       <section id="menuList" class="space-y-3" aria-live="polite"></section>
     </div>
   </main>
@@ -399,7 +407,12 @@
         }" data-cat="${c}">${c}</button>`;
       }).join('');
       document.querySelectorAll('[data-cat]').forEach(b =>
-        b.addEventListener('click', () => { activeCategory = b.dataset.cat; renderSidebar(); renderMenu(); })
+        b.addEventListener('click', () => {
+          activeCategory = b.dataset.cat;
+          const si = $('#dishSearch');
+          if (si) { si.value = ''; $('#searchWrap').classList.add('hidden'); }
+          renderSidebar(); renderMenu();
+        })
       );
     }
 
@@ -422,9 +435,18 @@
     }
 
     function renderMenu() {
-      const dishes = menuList.filter(d => d.category === activeCategory);
-      $('#categoryTitle').textContent = activeCategory;
+      const q = ($('#dishSearch')?.value || '').trim().toLowerCase();
+      const searching = q.length > 0;
+      const dishes = searching
+        ? menuList.filter(d => [d.name, d.ingredients, d.category, d.desc].join(' ').toLowerCase().includes(q))
+        : menuList.filter(d => d.category === activeCategory);
+      $('#categoryTitle').textContent = searching ? '搜索：' + q : activeCategory;
       $('#sumBadge').textContent = 'SUM: ' + dishes.length;
+
+      if (searching && dishes.length === 0) {
+        $('#menuList').innerHTML = `<div class="py-16 text-center text-mute text-sm">没有找到「${$('#dishSearch').value.trim()}」相关的菜，换个词试试？</div>`;
+        return;
+      }
 
       $('#menuList').innerHTML = dishes.map(dish => `
         <article class="rounded-2xl bg-card border border-white/5 p-3 hover:border-white/10 transition-all duration-200">
@@ -434,7 +456,10 @@
             </button>
             <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
               <button class="text-left" data-detail="${dish.id}">
-                <h3 class="truncate text-base font-bold text-tx">${dish.name}</h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="truncate text-base font-bold text-tx">${dish.name}</h3>
+                  ${searching ? `<span class="shrink-0 text-[10px] text-mute bg-white/5 px-2 py-0.5 rounded">${dish.category}</span>` : ''}
+                </div>
                 <p class="mt-1 text-xs leading-5 text-mute line-clamp-2">${dish.desc}</p>
                 <div class="flex items-center gap-2 mt-2">
                   ${starRating(dish.taste)}
@@ -682,6 +707,17 @@
     // 事件绑定
     $('#closeCart').addEventListener('click', ()=>$('#cartModal').classList.add('hidden'));
     $('#backToMenu').addEventListener('click', ()=>$('#cartModal').classList.add('hidden'));
+
+    /* ---- 菜品搜索 ---- */
+    $('#searchWrap').classList.remove('hidden');
+    const debounced = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+    $('#dishSearch').addEventListener('input', debounced(() => {
+      $('#clearSearch').classList.toggle('hidden', !$('#dishSearch').value);
+      renderMenu();
+    }, 120));
+    $('#dishSearch').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; $('#clearSearch').classList.add('hidden'); renderMenu(); e.target.blur(); } });
+    $('#clearSearch').addEventListener('click', () => { $('#dishSearch').value = ''; $('#clearSearch').classList.add('hidden'); renderMenu(); $('#dishSearch').focus(); });
+
     $('#clearCart').addEventListener('click', ()=>{
       if (!cartEntries().length) return; cart={}; saveCart(); renderMenu(); renderCartBar(); renderCartModal(); showToast('购物车已清空');
     });
